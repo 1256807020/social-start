@@ -19,6 +19,8 @@ app/
   layout.tsx            # 根布局
   page.tsx              # 首页（/）
   basic/page.tsx        # 演示页（/basic）
+  todos/page.tsx        # 学习者背诵范本：服务端组件 SSR（/todos）+ todo-client.tsx 客户端子组件
+  todo-client/page.tsx   # 学习者背诵范本：客户端组件全套 CRUD（/todo-client）
   api/                  # 全套 CRUD + 进阶接口（详见下方「目录结构（新增部分）」与「接口能力概览」）
   img/[name]/  file/[name]/   # 图片 / 通用文件静态访问
 components/ui/button.tsx      # shadcn Button
@@ -342,3 +344,80 @@ curl "http://localhost:3000/api/menu?tree=1"
   ```
 - **接口**：写 `app/api/<名>/route.ts` 并 `export async function GET/POST(...)`；或直接复用通用 CRUD——只要 `data/<resource>.json` 存在（或首次 POST 自动建），`/api/<resource>` 全套接口即刻可用，不用写任何代码。
 - 学习建议顺序：① 跑通 `/basic` 演示页看三块联动 → ② 仿写 `app/hello/page.tsx` 改文案 / 样式 → ③ `curl` 调 `/api/todo` 体会 CRUD → ④ 读 `lib/crud.ts` 理解纯逻辑如何与框架解耦。
+
+---
+
+## 七、学习者：三种正规数据请求写法（A / B / C）
+
+> 路线铁律：**页面 = `app/<段>/page.tsx`；接口 = `app/api/<段>/route.ts`；平铺的 `.tsx` 都不是路由。**
+> 三种写法**都能做标准 Todo 增删改查**，只是分工不同：
+> - **C（接口底座）**：后端 `route.ts`，提供增删改查能力，被 A / B 调用——它本身不直接渲染页面。
+> - **A（客户端组件）**：一个 `.tsx` 内用 `useEffect + fetch` 把查/增/删/改全包了，最直观，最适合初学 CRUD。
+> - **B（服务端组件 SSR）**：列表在服务端 `await fetch` 渲染（首屏最快、SEO 好）；增删改交给客户端子组件，改完 `router.refresh()` 重新拉——更"Next.js 地道"。
+> 仓库里已备好实体范本，可直接 `pnpm dev` 后访问对照背诵：
+> - **A 版**：`app/todo-client/page.tsx`（路由 `/todo-client`，客户端组件一套 CRUD 全包）
+> - **B 版**：`app/todos/page.tsx` + `app/todos/todo-client.tsx`（路由 `/todos`，SSR 列表 + 客户端子组件写）
+> - **C 版**：通用 CRUD 已内置（`/api/todo` 开箱即用）；自定义接口示例见下方 C 段 `app/api/hello/route.ts`。
+
+### A · 客户端组件（一套 CRUD 全在一个文件，最易上手）
+```tsx
+// app/hello/page.tsx
+'use client'
+import { useEffect, useState } from 'react'
+export default function Hello() {
+  const [list, setList] = useState<any[]>([])
+  const load = () => fetch('/api/todo?pageSize=20&sort=-id').then(r => r.json()).then(j => setList(j.data || []))
+  useEffect(() => { load() }, [])
+  const add = async (e: any) => {
+    e.preventDefault(); await fetch('/api/todo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: e.target.title.value, done:false }) }); load()
+  }
+  const del = async (id:number) => { await fetch(`/api/todo/${id}`, { method:'DELETE' }); load() }
+  return (<main className="p-6">
+    <form onSubmit={add}><input name="title" className="border rounded px-2 py-1" placeholder="标题"/><button type="submit">新增</button></form>
+    <ul>{list.map((t:any) => <li key={t.id}>{t.title} <button onClick={()=>del(t.id)}>删</button></li>)}</ul>
+  </main>)
+}
+```
+
+### B · 服务端组件 SSR（仓库范本 `app/todos`，列表服务端渲染 + 客户端子组件写）
+```tsx
+// app/todos/page.tsx  （Server Component：可 async/await，无需 'use client'）
+import { TodoClient, type Todo } from './todo-client'
+async function getTodos(): Promise<Todo[]> {
+  const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  const res = await fetch(`${base}/api/todo?pageSize=20&sort=-id`, { cache: 'no-store' })
+  return (await res.json()).data || []
+}
+export default async function TodosPage() {
+  const todos = await getTodos()
+  return <main className="mx-auto max-w-3xl p-6"><h1 className="text-2xl font-bold">Todo SSR 范本</h1><TodoClient initial={todos} /></main>
+}
+```
+```tsx
+// app/todos/todo-client.tsx  （'use client'：负责增/改/删，改完 router.refresh()）
+'use client'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+export function TodoClient({ initial }: { initial: any[] }) {
+  const router = useRouter(); const refresh = () => router.refresh()
+  const add = async (e: any) => { e.preventDefault(); await fetch('/api/todo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: e.target.title.value, done:false }) }); refresh() }
+  const del = async (id:number) => { await fetch(`/api/todo/${id}`, { method:'DELETE' }); refresh() }
+  return (<><form onSubmit={add}><input name="title"/><button>新增</button></form>
+    <ul>{initial.map((t:any) => <li key={t.id}>{t.title} <button onClick={()=>del(t.id)}>删</button></li>)}</ul></>)
+}
+```
+
+### C · 接口（Route Handler，后端 `route.ts`，A/B 都来调它）
+```ts
+// app/api/hello/route.ts  自定义接口示例（通用 CRUD 不用写，POST 即自动建集合）
+import { NextResponse } from 'next/server'
+export async function GET() {
+  return NextResponse.json({ code: 0, data: { hi: 'from api' }, msg: 'success' })
+}
+// 本项目通用 CRUD 已内置：任意集合（如 todo）直接拥有 /api/todo 全套增删改查，无需写代码。
+```
+
+### 记忆口诀
+- **查得最快用 B（SSR）；交互最简单用 A（客户端）；数据从哪来都走 C（接口）**。
+- 绝不直接 `import` / `fs.readFile` 读 `data/*.json`——绕过 CRUD 逻辑、Serverless 也读不到，不是正规架构。
+- 若生产设了 `ADMIN_TOKEN`，A / B 的**写请求**要带 `Authorization: Bearer <token>`（读请求始终开放）。
