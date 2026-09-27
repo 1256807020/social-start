@@ -55,8 +55,8 @@ pnpm dlx shadcn@latest add button
 
 ## 分支
 
-- `main` — 主干
-- `basic` — 开发分支
+- `main` — 主干，**保持不动，不与 `basic` 同步合并**。
+- `basic` — 主力开发分支，所有开发在此进行。
 
 ---
 
@@ -202,6 +202,22 @@ curl "http://localhost:3000/api/menu?tree=1"
 > 统一响应信封：`{ code, data, msg, total?, page?, pageSize?, totalPages? }`（`code=0` 成功）。
 > 设 `ADMIN_TOKEN` 后，所有**写操作**需携带 token（见「生产鉴权」）；**读操作**始终开放。
 
+### 能力清单（待办 / 已办）
+
+| 状态 | 能力 | 说明 |
+|---|---|---|
+| ✅ 已办 | 通用 CRUD 引擎 | 一个集合 = 一套完整接口（增删改查 / 分页 / 过滤 / 排序 / 树形 / 批量） |
+| ✅ 已办 | 系统 / 元数据接口 | health / collections / 集合详情与删除 |
+| ✅ 已办 | 媒体 / 图片模块 | 上传 / 列表 / 信息 / 删除 / 占位图 / 静态访问 |
+| ✅ 已办 | 生产鉴权（可选） | `ADMIN_TOKEN` 保护写操作，独立 Proxy 拦截层，零改核心 |
+| ✅ 已办 | 图形验证码 | `/api/captcha` 生成 + 校验（SVG，一次性） |
+| ✅ 已办 | 聚合统计 | `/api/:resource/aggregate`（`groupBy` / `sum` / `avg` / `min` / `max`） |
+| ✅ 已办 | 关联 `populate` | `?populate=author` 外键值替换为整条记录 |
+| ✅ 已办 | 通用文件（附件） | `/api/file/upload`，存 `public/uploads`，`/uploads/:name` 访问 |
+| ✅ 已办 | 集合数据批量导入 / 导出 | `/api/:resource/export`（json/csv）、`/api/:resource/import` |
+| 📋 待办 | RBAC 完整权限体系 | 用户 / 角色 / 权限 / 部门（`work/router/rbac/`，较重）—— 按需，暂不做 |
+| 📋 待办 | 微信 / 社区 / 积分等业务模块 | `work/other/` 设计文档 —— 按需，暂不做 |
+
 ### 一、通用 CRUD（一个集合 = 一套完整接口）
 把 URL 里的 `:resource` 换成任意集合名（如 `menu`、`article`、`todo`）即可，无需写代码：
 
@@ -235,21 +251,7 @@ curl "http://localhost:3000/api/menu?tree=1"
 | DELETE | `/api/image/:name` | 删除图片 |
 | GET | `/api/image/placeholder/:size` | 占位图 SVG（`/api/image/placeholder/300x200?text=hi`） |
 | GET | `/img/:name` | 静态访问（公开，带缓存） |
-
-### 四、查询参数（GET 列表 / 计数通用）
-- 分页：`page`、`pageSize`（上限 500）、`currentPage`
-- 排序：`sort=字段`（前缀 `-` 降序）、`order=asc|desc`
-- 过滤：任意字段；操作符后缀 `_like` `_in` `_nin` `_ne` `_gte` `_lte` `_gt` `_lt`
-- 关键字：`keyword`、`keywordFields=字段1,字段2`
-- 投影：`fields=字段1,字段2`
-- 树形：`tree=1`、`parentKey`（默认 `parentId`）、`childrenKey`（默认 `children`）
-
-### 五、可返回的响应数据类型
-单对象（详情） / 数组（裸 `data`） / 数组带分页（`{items,total,page,...}`） /
-树状嵌套（`children`） / 统计（`{total}`） / 操作结果（如 `{deleted:3}`） /
-统一错误信封（`{code,msg}`） / 二进制流（图片、`image/svg+xml` 占位图）。
-
-### 三·1、通用文件（附件，进阶，独立模块）
+### 四、通用文件（附件，进阶，独立模块）
 > 存储落点：`public/uploads/`（Next.js 公开目录），文件直接以 `/uploads/<name>` 访问，无需自建静态路由。
 
 | 方法 | 路径 | 说明 |
@@ -261,7 +263,7 @@ curl "http://localhost:3000/api/menu?tree=1"
 | GET | `/uploads/:name` | 静态访问（由 Next 公开目录直接托管） |
 | GET | `/file/:name` | 静态访问（兼容别名，同上文件） |
 
-### 三·2、集合数据批量导入 / 导出（文件批处理，进阶，独立模块）
+### 五、集合数据批量导入 / 导出（文件批处理，进阶，独立模块）
 > 对任意集合做 JSON / CSV 的批量导入导出，不依赖 `work/file/` 的文件系统引擎，直接走核心 CRUD。
 
 | 方法 | 路径 | 说明 |
@@ -269,7 +271,7 @@ curl "http://localhost:3000/api/menu?tree=1"
 | GET | `/api/:resource/export?format=json\|csv` | 导出集合为下载文件（默认 json） |
 | POST | `/api/:resource/import` | 导入集合：JSON 数组 body，或上传 `.json`/`.csv` 文件（字段 `file`），批量写入 |
 
-### 进阶：验证码 / 聚合 / 关联（均独立模块，不干扰核心）
+### 六、验证码 / 聚合 / 关联（进阶，独立模块，零改核心）
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/captcha` | 生成图形验证码（SVG），返回 `{ captchaId, image }` |
@@ -277,9 +279,17 @@ curl "http://localhost:3000/api/menu?tree=1"
 | GET | `/api/:resource/aggregate` | 聚合：`?groupBy=status&sum=amount&avg=score&min=age&max=age` |
 | GET | `/api/:resource?populate=author` | 关联：`item.author` 存的外键值替换为 `authors` 集合整条记录（可 `author:users:uid`） |
 
-### 六、BasicApi 仍可按需迁入的进阶能力（均不干扰核心）
-- **缺口已全部回填（本轮 + 上轮）**：验证码、聚合（`aggregate`）、关联（`populate`）、通用附件（`file` 模块）、集合数据批量导入/导出（JSON/CSV）均已作为独立模块接入，零改核心 CRUD / 存储。
-- **RBAC 完整权限体系**：用户 / 角色 / 权限 / 部门（`work/router/rbac/`）——较重，按你的要求**先不做**。
-- **微信 / 社区互动 / 积分**等业务特定模块（`work/other/` 设计文档）——按你的要求**先不做**。
+### 七、查询参数（GET 列表 / 计数通用）
+- 分页：`page`、`pageSize`（上限 500）、`currentPage`
+- 排序：`sort=字段`（前缀 `-` 降序）、`order=asc|desc`
+- 过滤：任意字段；操作符后缀 `_like` `_in` `_nin` `_ne` `_gte` `_lte` `_gt` `_lt`
+- 关键字：`keyword`、`keywordFields=字段1,字段2`
+- 投影：`fields=字段1,字段2`
+- 树形：`tree=1`、`parentKey`（默认 `parentId`）、`childrenKey`（默认 `children`）
+
+### 八、可返回的响应数据类型
+单对象（详情） / 数组（裸 `data`） / 数组带分页（`{items,total,page,...}`） /
+树状嵌套（`children`） / 统计（`{total}`） / 操作结果（如 `{deleted:3}`） /
+统一错误信封（`{code,msg}`） / 二进制流（图片、`image/svg+xml` 占位图）。
 
 > 演示页：`app/basic.tsx`（`/basic`）已内置 Todo 分页/树形、图片上传、图形验证码三块联动示例。
