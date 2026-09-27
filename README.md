@@ -187,8 +187,8 @@ curl "http://localhost:3000/api/menu?tree=1"
 - 行为：启用后，**写操作**（POST / PUT / PATCH / DELETE）必须携带正确 token；
   **读操作**（GET / HEAD / OPTIONS，含列表、详情、统计）始终开放——兼顾 SEO 爬虫公开抓取与管理写保护。
 - 携带方式三选一：`Authorization: Bearer <token>`、`x-admin-token: <token>`、查询参数 `?adminToken=<token>`。
-- 实现位置：`middleware.ts`（Next.js 边缘中间件，仅匹配 `/api/*`）+ `lib/auth.ts`（校验逻辑）。
-  **核心 `lib/crud.ts` / `lib/json-db.ts` 零改动**，鉴权是独立的边缘层能力。
+- 实现位置：`proxy.ts`（Next.js 16 Proxy 文件约定，仅匹配 `/api/*`）+ `lib/auth.ts`（校验逻辑）。
+  **核心 `lib/crud.ts` / `lib/json-db.ts` 零改动**，鉴权是独立的请求拦截层能力（Next.js 16 Proxy）。
 - 鉴权失败返回统一信封 `{ code: 40001, data: null, msg: '未授权...' }`（HTTP 401）。
 
 ## 部署注意

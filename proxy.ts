@@ -6,11 +6,11 @@ const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
 /**
- * 进阶鉴权中间件（仅在 /api/* 生效，不干扰页面渲染与 SEO）。
+ * 进阶鉴权（Next.js 16 Proxy 文件约定，仅 /api/* 生效，不干扰页面渲染与 SEO）。
  * - 未配置 ADMIN_TOKEN：完全透明，核心 CRUD 本地 / 公开开放。
  * - 已配置：写操作需正确 adminToken，读操作始终放行。
  */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   // 未启用：透明放行，核心能力零负担
   if (!isAuthEnabled()) return NextResponse.next()
 
