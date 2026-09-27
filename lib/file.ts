@@ -1,15 +1,15 @@
 /**
  * 通用文件（附件）服务（进阶能力，独立于核心 CRUD）。
  * 与 lib/media.ts 对称，但放宽格式限制，支持任意文件（非仅图片）。
- * 存储落点：data/files/（与核心 JSON / 图片同目录，未来可随 json-db 一起换存储后端）。
+ * 存储落点：public/uploads/（Next.js 公开目录，文件直接以 /uploads/<name> 访问，无需自建静态路由）。
  * 不修改 lib/crud.ts / lib/json-db.ts，纯独立模块。
  */
 import { promises as fsp } from 'fs'
 import path from 'path'
 import { badRequest, notFound, forbidden, internalError } from './response'
 
-export const fileDir = path.join(process.cwd(), 'data', 'files')
-export const filePrefix = '/file'
+export const fileDir = path.join(process.cwd(), 'public', 'uploads')
+export const filePrefix = '/uploads'
 
 function safeName(name: string): string {
   return String(name).replace(/[^\w.\-]/g, '_')

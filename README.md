@@ -250,13 +250,24 @@ curl "http://localhost:3000/api/menu?tree=1"
 统一错误信封（`{code,msg}`） / 二进制流（图片、`image/svg+xml` 占位图）。
 
 ### 三·1、通用文件（附件，进阶，独立模块）
+> 存储落点：`public/uploads/`（Next.js 公开目录），文件直接以 `/uploads/<name>` 访问，无需自建静态路由。
+
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/file/upload` | 上传通用文件（单/多，字段 `file`，任意格式，存 `data/files`） |
+| POST | `/api/file/upload` | 上传通用文件（字段 `file`，任意格式，存 `public/uploads`） |
 | GET | `/api/file/list` | 文件列表（分页） |
 | GET | `/api/file/info/:name` | 文件信息 |
 | DELETE | `/api/file/:name` | 删除文件 |
-| GET | `/file/:name` | 静态访问（公开，inline 预览） |
+| GET | `/uploads/:name` | 静态访问（由 Next 公开目录直接托管） |
+| GET | `/file/:name` | 静态访问（兼容别名，同上文件） |
+
+### 三·2、集合数据批量导入 / 导出（文件批处理，进阶，独立模块）
+> 对任意集合做 JSON / CSV 的批量导入导出，不依赖 `work/file/` 的文件系统引擎，直接走核心 CRUD。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/:resource/export?format=json\|csv` | 导出集合为下载文件（默认 json） |
+| POST | `/api/:resource/import` | 导入集合：JSON 数组 body，或上传 `.json`/`.csv` 文件（字段 `file`），批量写入 |
 
 ### 进阶：验证码 / 聚合 / 关联（均独立模块，不干扰核心）
 | 方法 | 路径 | 说明 |
@@ -267,9 +278,8 @@ curl "http://localhost:3000/api/menu?tree=1"
 | GET | `/api/:resource?populate=author` | 关联：`item.author` 存的外键值替换为 `authors` 集合整条记录（可 `author:users:uid`） |
 
 ### 六、BasicApi 仍可按需迁入的进阶能力（均不干扰核心）
-- **本轮回填缺口已完成**：验证码、聚合（`aggregate`）、关联（`populate`）、通用附件（`file` 模块）均已作为独立模块接入，零改核心。
-- **文件批处理**：批量导入 / 导出 JSON、CSV（`work/file/`）——列为下一步规划（本次先不做）。
-- **RBAC 完整权限体系**：用户 / 角色 / 权限 / 部门（`work/router/rbac/`）——较重，建议分阶接入（先不做）。
-- **微信 / 社区互动 / 积分**等业务特定模块（`work/other/` 设计文档）——按需（先不做）。
+- **缺口已全部回填（本轮 + 上轮）**：验证码、聚合（`aggregate`）、关联（`populate`）、通用附件（`file` 模块）、集合数据批量导入/导出（JSON/CSV）均已作为独立模块接入，零改核心 CRUD / 存储。
+- **RBAC 完整权限体系**：用户 / 角色 / 权限 / 部门（`work/router/rbac/`）——较重，按你的要求**先不做**。
+- **微信 / 社区互动 / 积分**等业务特定模块（`work/other/` 设计文档）——按你的要求**先不做**。
 
 > 演示页：`app/basic.tsx`（`/basic`）已内置 Todo 分页/树形、图片上传、图形验证码三块联动示例。

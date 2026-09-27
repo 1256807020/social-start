@@ -22,10 +22,26 @@ function max(arr: any[], f: string) {
 export async function aggregate(resource: string, q: Record<string, any>) {
   const list = await db.read(resource)
   // 复用查询引擎做过滤 / 关键字，但聚合本身忽略分页与树
+  // 复用查询引擎做字段过滤，但剔除聚合专用参数（避免被当成普通字段过滤）
   const q2 = { ...q }
-  delete q2.page
-  delete q2.pageSize
-  delete q2.tree
+  for (const k of [
+    'page',
+    'pageSize',
+    'tree',
+    'sort',
+    'order',
+    'keyword',
+    'keywordFields',
+    'fields',
+    'populate',
+    'groupBy',
+    'sum',
+    'avg',
+    'min',
+    'max',
+  ]) {
+    delete (q2 as Record<string, any>)[k]
+  }
   const filtered = applyQuery(list, q2).data
 
   const sumFields = String(q.sum || '').split(',').map((s) => s.trim()).filter(Boolean)

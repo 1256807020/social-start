@@ -33,6 +33,9 @@ next-env.d.ts
 /data/*.json
 /data/.*.tmp
 
+# 运行时上传的公开文件（直接由 Next 静态托管，不入库）
+/public/uploads/
+
 # 参考项目（从 BasicApi 拷贝的 koa2 源码，仅本地参考，不入库）
 work/
 work
