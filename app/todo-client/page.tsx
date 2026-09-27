@@ -101,7 +101,7 @@ export default function TodoClientPage() {
               <form onSubmit={saveEdit} className="flex flex-1 gap-2">
                 <input
                   className="flex-1 rounded border px-2 py-1"
-                  value={editing.title}
+                  value={editing?.title ?? ''}
                   onChange={(e) => setEditing({ id: t.id, title: e.target.value })}
                 />
                 <button className="rounded bg-green-600 px-2 py-1 text-white" type="submit">
