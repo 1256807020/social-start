@@ -15,13 +15,14 @@
 
 ```
 app/
-  globals.css      # Tailwind v4 + shadcn 主题变量（标准模板）
-  layout.tsx       # 根布局
-  page.tsx         # 首页（水平垂直居中的带图标按钮示例）
-components/
-  ui/button.tsx    # shadcn Button
-lib/
-  utils.ts         # cn() 工具（clsx + tailwind-merge）
+  globals.css           # Tailwind v4 + shadcn 主题变量
+  layout.tsx            # 根布局
+  page.tsx              # 首页（/）
+  basic/page.tsx        # 演示页（/basic）
+  api/                  # 全套 CRUD + 进阶接口（详见下方「目录结构（新增部分）」与「接口能力概览」）
+  img/[name]/  file/[name]/   # 图片 / 通用文件静态访问
+components/ui/button.tsx      # shadcn Button
+lib/                    # 引擎与进阶模块（json-db/query/response/crud/route-utils/csv/captcha/aggregate/populate/media/file/auth）
 ```
 
 ## 快速开始
@@ -37,6 +38,9 @@ pnpm dev        # http://localhost:3000
 pnpm build
 pnpm start
 ```
+
+> ⚠️ 重启 / 重新构建前清场（避免旧进程占用端口、旧产物干扰）：先杀掉所有 node 进程
+> （`powershell -NoProfile -Command "taskkill /F /IM node.exe"`），再删除旧构建 `rm -rf .next`，然后重新 `pnpm dev` / `pnpm build`。
 
 ## 添加 shadcn 组件
 
@@ -100,6 +104,8 @@ app/api/collections/[name]/route.ts     集合详情（字段结构自动推断 
 ```
 
 ## API 速查
+
+> 下方为核心 CRUD 速查；**完整接口（含图片 / 文件 / 验证码 / 聚合 / 关联 / 导入导出等进阶模块）见文末「接口能力概览」**。
 
 ### 业务接口（`resource` = 集合名，不含 `.json`）
 
@@ -175,10 +181,9 @@ curl "http://localhost:3000/api/menu?tree=1"
   `/api/health`、`/api/collections`、`/api/:resource/count`。
   相对原 BasicApi 的 `/api/_health`、`/api/_collections`、`/api/:resource/_count` 写法，
   本基座去掉了下划线私有文件夹前缀，让这些端点作为常规路由直接可访问。
-- 鉴权（`adminToken`）未内置：原 BasicApi 的清空/删除集合接口默认开放（本地开发友好）。
-  生产环境可在 `lib/crud.ts` 或路由层接入 Next 中间件做鉴权。
-- 图片服务、文件批处理、RBAC、微信等扩展模块**未纳入基座核心**（与 Next 部署模型 / Serverless
-  文件系统约束不符），可作为后续按需扩展；本基座已预留 `app/api/` 路由扩展点。
+- 鉴权（`ADMIN_TOKEN`）**已内置为可选能力**：由 `proxy.ts`（Next.js 16 Proxy 文件约定，仅匹配 `/api/*`）+ `lib/auth.ts` 实现，默认关闭（不设置则透明放行），启用后只校验写操作、读操作开放；**核心 `lib/crud.ts` / `lib/json-db.ts` 零改动**（详见下方「生产鉴权」）。
+- 图片服务、通用文件（附件）、集合数据批量导入 / 导出（JSON/CSV）、图形验证码、聚合（`aggregate`）、关联（`populate`）**均已作为独立进阶模块接入**，零改核心。
+  仅 **RBAC 完整权限体系**、**微信 / 社区 / 积分等业务模块** 按需求**暂不做**（已在「能力清单」标为待办）；本基座已预留 `app/api/` 与 `app/<page>/page.tsx` 扩展点。
 
 ## 生产鉴权（进阶 / 可选，不干扰核心）
 
@@ -292,4 +297,48 @@ curl "http://localhost:3000/api/menu?tree=1"
 树状嵌套（`children`） / 统计（`{total}`） / 操作结果（如 `{deleted:3}`） /
 统一错误信封（`{code,msg}`） / 二进制流（图片、`image/svg+xml` 占位图）。
 
-> 演示页：`app/basic.tsx`（`/basic`）已内置 Todo 分页/树形、图片上传、图形验证码三块联动示例。
+> 演示页：`app/basic/page.tsx`（路由 `/basic`）已内置 Todo 分页/树形、图片上传、图形验证码三块联动示例。
+
+---
+
+## 系统综合分析评价（架构师视角）
+
+### 一、总体定位与成熟度
+- Social Start 已从一个「Next.js 起步模板」演进为**生产可用的全栈 CRUD 基座**：零数据库、零接口代码即可获得企业级数据接口，并补齐了图片 / 文件 / 验证码 / 聚合 / 关联 / 导入导出等进阶能力。
+- 成熟度：核心引擎稳定（原子写 + per-集合写队列），进阶模块均为「零改核心」的插拔式，能力清单 9/11 已办。
+
+### 二、架构亮点
+- **关注点解耦**：`lib/json-db`（存储）/ `lib/query`（查询）/ `lib/response`（信封）/ `lib/crud`（纯逻辑）/ `lib/route-utils`（框架适配）分层清晰，核心不依赖 Next 运行时，未来换存储 / 换框架成本低。
+- **统一信封 + 错误码**：前后端契约稳定，`{ code, data, msg }` 一套到底，前端可无脑 `if (code === 0)`。
+- **扩展不侵入核心**：所有进阶能力走 `proxy.ts` 拦截层或路由层后处理，绝不回头改 `crud.ts`，符合开闭原则。
+- **文件系统原子写 + 串行写队列**：避免并发覆盖与半截文件，是「无数据库也安全」的关键。
+
+### 三、能力覆盖度（企业级评估）
+- 返回形态覆盖 ~90%+：对象 / 裸数组 / 分页数组 / 树 / 字典统计 / 操作结果 / 错误信封 / 二进制流（图片、SVG）。
+- 已具备（除 RBAC 外）绝大多数后台能力：可选鉴权、验证码、聚合、关联、批量、导入导出、静态托管。
+- 缺口（已标待办）：完整 RBAC、多租户、业务域（微信 / 社区 / 积分）。非技术阻塞，均为「加模块」而非「改核心」。
+
+### 四、与 AI 浪潮的契合度（AI 潮流视角）
+- **AI 生成 CRUD**：本基座「一个 JSON = 一套接口」正是 LLM 最擅长生成的产物——让 AI 写 `data/<resource>.json` + 前端 `app/<resource>/page.tsx`，即可秒出一套增删改查应用，契合 "vibe coding / 自然语言建应用" 趋势。
+- **低代码 / Agentic 开发**：动态集合 + 通用查询语法，天然适合做 Agent 的工具层（Agent 调 `/api/:resource` 读写数据），无需预定义 schema。
+- **Serverless + AI SDK**：`lib/json-db` 可无缝替换为 Postgres / D1 / Blobs（上层零改），随时接 Vercel AI SDK / 流式 RSC，向 AI 原生应用演进。
+- 一句话定位：**它是「AI 帮你写业务」的最佳底座之一**——把重复的后端样板从 AI 的上下文里彻底拿掉。
+
+### 五、已知约束与演进路线
+- Serverless 文件系统只读：上线需替换 `lib/json-db` 存储后端（已解耦，成本低）。
+- 校验：目前靠路由层手动处理，建议补全局请求校验中间件。
+- 分页上限 500：大数据量档需把查询下沉到存储（SQL WHERE）。
+- 测试：核心引擎建议补 Vitest 单测（原子写 / 查询语法）作为下一步。
+
+### 六、给 React 学习者：如何加一个新页面 / 接口
+- **页面（重点）**：在 `app/` 下建 `app/<名>/page.tsx`，导出默认 React 组件，路由 `/<名>` 自动生效——
+  **注意是 `page.tsx`（放在文件夹里），不是平铺的 `app/<名>.tsx`**（后者不会注册路由；本站演示页最初写成 `app/basic.tsx` 实测返回 404，已修正为 `app/basic/page.tsx`）。
+  ```tsx
+  // app/hello/page.tsx
+  export default function Hello() {
+    return <h1 className="p-8 text-2xl font-bold">Hello Social Start</h1>
+  }
+  // 访问 http://localhost:3000/hello 即可，无需任何路由配置
+  ```
+- **接口**：写 `app/api/<名>/route.ts` 并 `export async function GET/POST(...)`；或直接复用通用 CRUD——只要 `data/<resource>.json` 存在（或首次 POST 自动建），`/api/<resource>` 全套接口即刻可用，不用写任何代码。
+- 学习建议顺序：① 跑通 `/basic` 演示页看三块联动 → ② 仿写 `app/hello/page.tsx` 改文案 / 样式 → ③ `curl` 调 `/api/todo` 体会 CRUD → ④ 读 `lib/crud.ts` 理解纯逻辑如何与框架解耦。
