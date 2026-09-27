@@ -20,7 +20,7 @@ export class HttpError extends Error {
   data: unknown
   constructor(
     status = 500,
-    code = CODES.INTERNAL_ERROR,
+    code: number = CODES.INTERNAL_ERROR,
     message = '服务器内部错误',
     data: unknown = null,
   ) {
