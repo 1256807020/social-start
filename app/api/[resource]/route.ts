@@ -3,6 +3,7 @@ import { withApi } from '@/lib/response'
 import { handlers } from '@/lib/crud'
 import { assertName } from '@/lib/json-db'
 import { toQuery, readJson, toResponse } from '@/lib/route-utils'
+import { populateRecords } from '@/lib/populate'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -12,10 +13,13 @@ export async function GET(
   { params }: { params: Promise<{ resource: string }> },
 ) {
   const { resource } = await params
+  const q = toQuery(req)
   return toResponse(
     await withApi(async () => {
       assertName(resource)
-      return handlers.list(resource, toQuery(req))
+      const res = await handlers.list(resource, q)
+      if (q.populate) await populateRecords(res.body.data as any[], q.populate)
+      return res
     }),
   )
 }

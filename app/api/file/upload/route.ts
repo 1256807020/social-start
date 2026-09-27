@@ -1,19 +1,19 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { ok, badRequest, withApi } from '@/lib/response'
-import { saveUpload } from '@/lib/media'
+import { saveUpload } from '@/lib/file'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
-/** 上传（单张或多张，字段名 file） */
+/** 上传通用文件（单/多，字段名 file，任意格式） */
 export async function POST(req: NextRequest) {
   return withApi(async () => {
     const form = await req.formData()
     const files = (form.getAll('file') as unknown[]).filter(
       (f): f is File => f instanceof File && f.size > 0,
     )
-    if (!files.length) throw badRequest('请选择要上传的图片')
-
+    if (!files.length) throw badRequest('请选择要上传的文件')
     const saved: any[] = []
     for (const f of files) {
       const buf = Buffer.from(await f.arrayBuffer())
@@ -21,11 +21,12 @@ export async function POST(req: NextRequest) {
       saved.push({
         name,
         original: f.name,
-        url: `/img/${encodeURIComponent(name)}`,
+        url: `/file/${encodeURIComponent(name)}`,
         size: f.size,
         sizeText: `${Math.round(f.size / 1024)} KB`,
+        ext: (f.name.split('.').pop() || '').toLowerCase(),
       })
     }
-    return ok(saved.length === 1 ? saved[0] : saved, `上传成功 ${saved.length} 张`, {}, 201)
+    return ok(saved.length === 1 ? saved[0] : saved, `上传成功 ${saved.length} 个`, {}, 201)
   })
 }

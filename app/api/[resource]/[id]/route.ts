@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server'
 import { withApi } from '@/lib/response'
 import { handlers } from '@/lib/crud'
 import { assertName } from '@/lib/json-db'
-import { readJson, toResponse } from '@/lib/route-utils'
+import { toQuery, readJson, toResponse } from '@/lib/route-utils'
+import { populateRecords } from '@/lib/populate'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -13,10 +14,13 @@ export async function GET(
   { params }: { params: Promise<{ resource: string; id: string }> },
 ) {
   const { resource, id } = await params
+  const q = toQuery(req)
   return toResponse(
     await withApi(async () => {
       assertName(resource)
-      return handlers.detail(resource, id)
+      const res = await handlers.detail(resource, id)
+      if (q.populate) await populateRecords([res.body.data], q.populate)
+      return res
     }),
   )
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { ok, withApi } from '../../../../lib/response'
-import { deleteImage } from '../../../../lib/media'
+import { ok, withApi } from '@/lib/response'
+import { deleteImage } from '@/lib/media'
 
 export const dynamic = 'force-dynamic'
 

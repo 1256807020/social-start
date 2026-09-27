@@ -249,8 +249,27 @@ curl "http://localhost:3000/api/menu?tree=1"
 树状嵌套（`children`） / 统计（`{total}`） / 操作结果（如 `{deleted:3}`） /
 统一错误信封（`{code,msg}`） / 二进制流（图片、`image/svg+xml` 占位图）。
 
+### 三·1、通用文件（附件，进阶，独立模块）
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/file/upload` | 上传通用文件（单/多，字段 `file`，任意格式，存 `data/files`） |
+| GET | `/api/file/list` | 文件列表（分页） |
+| GET | `/api/file/info/:name` | 文件信息 |
+| DELETE | `/api/file/:name` | 删除文件 |
+| GET | `/file/:name` | 静态访问（公开，inline 预览） |
+
+### 进阶：验证码 / 聚合 / 关联（均独立模块，不干扰核心）
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/captcha` | 生成图形验证码（SVG），返回 `{ captchaId, image }` |
+| POST | `/api/captcha/verify` | 校验验证码（`{ captchaId, code }` → `{ success }`，一次性） |
+| GET | `/api/:resource/aggregate` | 聚合：`?groupBy=status&sum=amount&avg=score&min=age&max=age` |
+| GET | `/api/:resource?populate=author` | 关联：`item.author` 存的外键值替换为 `authors` 集合整条记录（可 `author:users:uid`） |
+
 ### 六、BasicApi 仍可按需迁入的进阶能力（均不干扰核心）
-- **文件批处理**：批量导入 / 导出 JSON、CSV（`work/file/`）——进阶工具。
-- **RBAC 完整权限体系**：用户 / 角色 / 权限 / 部门（`work/router/rbac/`）——较重，建议分阶接入。
-- **通用非图片附件上传**：当前媒体模块限定图片格式，可放宽支持任意文件。
-- **微信 / 社区互动 / 积分**等业务特定模块（`work/other/` 设计文档）——按需。
+- **本轮回填缺口已完成**：验证码、聚合（`aggregate`）、关联（`populate`）、通用附件（`file` 模块）均已作为独立模块接入，零改核心。
+- **文件批处理**：批量导入 / 导出 JSON、CSV（`work/file/`）——列为下一步规划（本次先不做）。
+- **RBAC 完整权限体系**：用户 / 角色 / 权限 / 部门（`work/router/rbac/`）——较重，建议分阶接入（先不做）。
+- **微信 / 社区互动 / 积分**等业务特定模块（`work/other/` 设计文档）——按需（先不做）。
+
+> 演示页：`app/basic.tsx`（`/basic`）已内置 Todo 分页/树形、图片上传、图形验证码三块联动示例。

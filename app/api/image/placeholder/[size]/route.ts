@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { placeholderSvg } from '../../../../lib/media'
+import { placeholderSvg } from '@/lib/media'
 
 export const dynamic = 'force-dynamic'
 

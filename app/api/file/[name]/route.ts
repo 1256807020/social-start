@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server'
 import { ok, withApi } from '@/lib/response'
-import { infoImage } from '@/lib/media'
+import { deleteFile } from '@/lib/file'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
-/** 图片信息 */
-export async function GET(
+/** 删除文件 */
+export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ name: string }> },
 ) {
   return withApi(async () => {
     const { name } = await params
-    return ok(await infoImage(name))
+    await deleteFile(name)
+    return ok({ name }, '删除成功')
   })
 }
