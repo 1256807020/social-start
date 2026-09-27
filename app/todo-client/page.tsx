@@ -86,6 +86,10 @@ export default function TodoClientPage() {
         <button className="rounded bg-blue-600 px-3 py-1 text-white" type="submit">
           新增
         </button>
+        {/* 刷新：重新拉当前页（客户端组件里就是再 fetch 一次） */}
+        <button className="rounded border px-3 py-1" type="button" onClick={() => load(page)}>
+          刷新
+        </button>
       </form>
 
       {/* 列表 + 改 + 删 */}
