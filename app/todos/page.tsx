@@ -2,13 +2,17 @@
 // 特点：① 列表在服务端 await fetch 渲染（首屏快、SEO 好）；
 //      ② 分页由 URL 的 ?page= 驱动（searchParams），点链接服务端重新按页取数，无需客户端 fetch；
 //      ③ 增/改/删交给同目录 <TodoClient/> 客户端子组件，改完 router.refresh() 让服务端重拉。
+import { headers } from 'next/headers'
 import { TodoClient, type Todo } from './todo-client'
 
 const PAGE_SIZE = 8
 
 // 服务端按页码取数：cache:'no-store' 保证每次实时读最新
 async function getTodos(page: number): Promise<{ data: Todo[]; total: number; totalPages: number }> {
-  const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  // 同源优先：未设 NEXT_PUBLIC_BASE_URL 时，用当前请求的真实 host（含端口），
+  // 彻底避免写死 localhost:3000 导致 SSR 误请求到其它项目（如 3000 端口跑着 Nuxt）的库。
+  const h = await headers()
+  const base = process.env.NEXT_PUBLIC_BASE_URL || `http://${h.get('host') || 'localhost'}`
   const res = await fetch(`${base}/api/todo?page=${page}&pageSize=${PAGE_SIZE}&sort=-id`, { cache: 'no-store' })
   const json = await res.json()
   const total = json.total || 0
