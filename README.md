@@ -422,3 +422,73 @@ export async function GET() {
 - **查得最快用 B（SSR）；交互最简单用 A（客户端）；数据从哪来都走 C（接口）**。
 - 绝不直接 `import` / `fs.readFile` 读 `data/*.json`——绕过 CRUD 逻辑、Serverless 也读不到，不是正规架构。
 - 若生产设了 `ADMIN_TOKEN`，A / B 的**写请求**要带 `Authorization: Bearer <token>`（读请求始终开放）。
+
+---
+
+## 八、基于本基座能做什么站点（含 SEO 能力）
+
+> 结论：本基座已能完整做出 **博客 / 新闻 / 文档 / 软件站 / 导航站**，SEO 用 Next.js 原生能力补齐即可；上线前把 JSON 存储换成 DB、补全文搜索与（可选）后台鉴权，即达生产级。
+
+### 8.1 内容站建模（直接复用 CRUD 引擎，无需写后端）
+
+| 站点 | 集合设计 | 要点 |
+|---|---|---|
+| 博客 Blog | `posts`（`title/body/categoryId/tags/publishedAt`） | 分类用 `categoryId` 关联；标签走 `_in` 数组查询；`body` 存 Markdown |
+| 新闻 News | 同 Blog，时间序为主 | `sort=-publishedAt`；频道 = `categoryId` |
+| 文档 Docs | `docs`（`parentId` 章节树） | 天然适配 `?tree=1` 树形；左侧目录直接复用 `/basic` 的 `TreeNode` 思路 |
+| 软件站 | `software` + `category` 树 | 分类导航 + 详情页 + 下载链接 / 评分字段 |
+| 导航站 | `links` + `category` 树 | 最轻量，几乎零业务逻辑 |
+
+### 8.2 SEO 能力（Next.js 全部开箱，无需造轮子）
+
+- **静态化 / SSR**：`generateStaticParams` +（默认 SSR 或 `output: 'export'`）把文章 / 详情页预渲染成静态 HTML，爬虫友好。
+- **动态元信息**：`generateMetadata` 每篇文章生成 `title` / `description` / Open Graph 标签。
+- **站点地图 / 爬虫协议**：`app/sitemap.ts`、`app/robots.ts` 直接产出。
+- **结构化数据 JSON-LD**：博客 `Article`、软件站 `SoftwareApplication`、导航站 `ItemList`，塞进页面拿富媒体搜索结果。
+- **RSS**：写个 route handler 输出 XML（思路同 `/export`）。
+
+### 8.3 上线前的真实约束与升级路径
+
+1. **存储是 JSON 文件**：读多写少（内容站正是此负载）完全够；高并发 / 大流量 / 评论 / 多作者时需换 DB。好消息是 `lib/crud.ts` 与存储无关——把 `lib/json-db.ts` 换成 Prisma/Postgres，路由层一行不动（同款解耦思路已在 BasicNest 验证）。
+2. **无全文搜索**：`query.ts` 仅有 `contains` 关键字匹配，非 FTS。文档站搜索建议接 **Pagefind**（构建期静态索引，零后端，与 SSG 绝配）或 FlexSearch。
+3. **无后台鉴权**：当前系统无 auth，纯展示站不用管；要「可发布后台」需补登录（可选 `ADMIN_TOKEN` 仅保护写操作）。
+4. **Markdown/MDX**：正文存 MD 字符串，渲染层接 `@next/mdx` 或 `react-markdown` 即可。
+
+---
+
+## 九、Nuxt4 对等能力与 Vue3 学习路线
+
+> 结论：**Nuxt4 能搭出完全一样的系统**，技术层级对等；且可作为你学习 **Vue3** 的基座（先在本项目学 React/Next，再去 Nuxt，遵循同一套「初级 → 中级 → 高级」进阶路线）。
+
+### 9.1 Nuxt4 能否做一样的（能力映射）
+
+| 能力 | 本基座（Next.js / React） | Nuxt4（Vue3）对等物 |
+|---|---|---|
+| 路由 | App Router 文件路由 | Nuxt 文件路由（更约定式） |
+| SSR/SSG/SEO | `generateMetadata` / `generateStaticParams` | `useSeoMeta` / `useHead` + `nuxt.config` prerender |
+| 站点地图 | `app/sitemap.ts` | `@nuxtjs/sitemap` |
+| API | `app/api` route handlers | Nitro `server/api`、`server/routes`（同款文件路由） |
+| 组件库 | shadcn（React） | `shadcn-vue` / **Nuxt UI** / Reka UI |
+| 内容站 | 自写 JSON CRUD / MDX | **`@nuxt/content`**（专为 MD/MDX/YAML/CSV 设计，比自造 CRUD 更省力） |
+
+- **差异点（非能力差距，是生态取向）**：内容站 Nuxt 用 `@nuxt/content` 读 `content/` 目录 markdown，自带导航 / 搜索 / 高亮，几乎零后端；Next 这边要自接 MDX + 引擎。
+- **可复用部分**：本基座 `lib/crud.ts` 是**纯 TS、与框架无关**，原样搬到 Nuxt 的 Nitro server route 即可跑（Node 运行时通用）——「一个 JSON = 一套 CRUD」核心不绑定 React。
+- **组件层换皮**：shadcn 的 React 组件不能直接用，改用 shadcn-vue / Nuxt UI，但交互模式一致。
+- **部署**：Nitro 部署目标更广（Node / Serverless / Edge / Cloudflare Pages 一键），与 Next 旗鼓相当。
+
+### 9.2 Nuxt4 作为 Vue3 学习基座（初级 → 中级 → 高级）
+
+- **定位**：本项目（social-start，Next/React）是你的 **React 学习基座**；**Nuxt4 是你的 Vue3 学习基座**，二者路线对称。
+- **学习顺序**：先在本项目吃透 React/Next（服务端组件 SSR、客户端组件 CRUD、通用 CRUD 引擎），再转 Nuxt4 学 Vue3（组合式 API、`<script setup>`、Nitro server route），复用同一套「一个集合 = 一套接口」思维。
+- **进阶路线（初级 → 中级 → 高级）**：与仓库根 `初级中级高级进阶.md` 的 React 路线对应，Vue3 路线同样分三级：
+  - **初级**：跑通 Nuxt 起步页 + 调通用 CRUD（理解「页面 = `pages/<名>.vue`，接口 = `server/api/<名>.ts`」）。
+  - **中级**：SSR 列表 + 客户端子组件写（Nuxt 的 `useFetch` / `useAsyncData` 对应 React 的 `useEffect` / 服务端 `await fetch`）。
+  - **高级**：内容站（接 `@nuxt/content`）+ SEO（`useSeoMeta` / `sitemap`）+ 把本基座 `lib/crud.ts` 纯逻辑移植到 Nitro，做出与本项目对等的 Nuxt 版快速开发平台。
+
+---
+
+## 十、分支状态（2026-09-27 起）
+
+- `main` — **已正式锁定（frozen）**，作为稳定基线，最终经 FF 合并追平到 `9d0b7ae`；后续只允 `git merge --ff-only basic`，不 rebase/reset。
+- `basic` — **活跃分支**，所有开发 / 学习在此进行（提交只落 basic）。
+- 学习新概念（Zustand / Zod / Vue3 等）：从 `basic` 拉 `learn/<topic>` 分支，互不干扰、可丢弃。
