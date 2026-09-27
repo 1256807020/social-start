@@ -37,22 +37,22 @@ export default function TodoClientPage() {
     load(page)
   }
 
-  // 改状态（PUT /api/todo/:id，增量合并）
+  // 改状态（PATCH /api/todo/:id，增量合并）
   const toggle = async (t: any) => {
     await fetch(`/api/todo/${t.id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ done: !t.done }),
     })
     load(page)
   }
 
-  // 改标题（PUT /api/todo/:id）
+  // 改标题（PATCH /api/todo/:id，增量合并）
   const saveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editing) return
     await fetch(`/api/todo/${editing.id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: editing.title }),
     })
