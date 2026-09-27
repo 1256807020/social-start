@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 /** 上传（单张或多张，字段名 file） */
 export async function POST(req: NextRequest) {
-  return toResponse(withApi(async () => {
+  return toResponse(await withApi(async () => {
     const form = await req.formData()
     const files = (form.getAll('file') as unknown[]).filter(
       (f): f is File => f instanceof File && f.size > 0,
@@ -28,5 +28,5 @@ export async function POST(req: NextRequest) {
       })
     }
     return ok(saved.length === 1 ? saved[0] : saved, `上传成功 ${saved.length} 张`, {}, 201)
-  })
+  }))
 }

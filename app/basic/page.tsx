@@ -9,10 +9,12 @@ export default function BasicDemo() {
   const pageSize = 8
   const [title, setTitle] = useState('')
   const [parentId, setParentId] = useState('')
+  const [editing, setEditing] = useState<number | null>(null)
   const [images, setImages] = useState<any[]>([])
   const [cap, setCap] = useState<{ captchaId: string; image: string } | null>(null)
   const [code, setCode] = useState('')
   const [capMsg, setCapMsg] = useState('')
+  const [tree, setTree] = useState<any[]>([])
 
   const loadTodos = useCallback(async (p: number) => {
     const r = await fetch(`/api/todo?page=${p}&pageSize=${pageSize}&sort=-id`)
@@ -38,23 +40,60 @@ export default function BasicDemo() {
     setCapMsg('')
   }, [])
 
+  const loadTree = useCallback(async () => {
+    const r = await fetch('/api/todo?tree=1')
+    if (!r.ok) return
+    const j = await r.json().catch(() => null)
+    if (j) setTree(j.data || [])
+  }, [])
+
   useEffect(() => {
     loadTodos(1)
     loadImages()
     loadCap()
-  }, [loadTodos, loadImages, loadCap])
+    loadTree()
+  }, [loadTodos, loadImages, loadCap, loadTree])
 
-  const addTodo = async (e: React.FormEvent) => {
+  const saveTodo = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
-    await fetch('/api/todo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, done: false, parentId: parentId ? Number(parentId) : 0 }),
-    })
+    const payload = { title, parentId: parentId ? Number(parentId) : 0 }
+    if (editing != null) {
+      await fetch(`/api/todo/${editing}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      setEditing(null)
+    } else {
+      await fetch('/api/todo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, done: false }),
+      })
+    }
     setTitle('')
     setParentId('')
     loadTodos(page)
+    loadTree()
+  }
+
+  const startEdit = (t: any) => {
+    setEditing(t.id)
+    setTitle(t.title)
+    setParentId(String(t.parentId ?? 0))
+  }
+
+  const cancelEdit = () => {
+    setEditing(null)
+    setTitle('')
+    setParentId('')
+  }
+
+  const delTodo = async (id: number) => {
+    await fetch(`/api/todo/${id}`, { method: 'DELETE' })
+    loadTodos(page)
+    loadTree()
   }
 
   const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +119,22 @@ export default function BasicDemo() {
 
   const totalPages = Math.max(Math.ceil(total / pageSize), 1)
 
+  const TreeNode = ({ node, depth = 0 }: { node: any; depth?: number }) => (
+    <li>
+      <span style={{ paddingLeft: depth * 16 }} className="inline-block">
+        <span className="text-gray-400">└</span> #{node.id} {node.title}
+        {node.done ? ' ✅' : ''}
+      </span>
+      {node.children?.length > 0 && (
+        <ul>
+          {node.children.map((c: any) => (
+            <TreeNode key={c.id} node={c} depth={depth + 1} />
+          ))}
+        </ul>
+      )}
+    </li>
+  )
+
   return (
     <main className="mx-auto max-w-6xl p-6 space-y-6">
       <h1 className="text-2xl font-bold">Basic 基座能力演示 · app/basic.tsx</h1>
@@ -88,7 +143,7 @@ export default function BasicDemo() {
         {/* Todo CRUD + 分页 */}
         <section className="rounded-xl border p-4 space-y-3">
           <h2 className="font-semibold">Todo（增删查 + 分页 + 树形 parentId）</h2>
-          <form onSubmit={addTodo} className="space-y-2">
+          <form onSubmit={saveTodo} className="space-y-2">
             <input
               className="w-full rounded border px-2 py-1"
               placeholder="标题"
@@ -101,15 +156,43 @@ export default function BasicDemo() {
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
             />
-            <button className="rounded bg-blue-600 px-3 py-1 text-white" type="submit">
-              新增
-            </button>
+            <div className="flex gap-2">
+              <button className="rounded bg-blue-600 px-3 py-1 text-white" type="submit">
+                {editing != null ? '保存修改' : '新增'}
+              </button>
+              {editing != null && (
+                <button
+                  className="rounded border px-3 py-1"
+                  type="button"
+                  onClick={cancelEdit}
+                >
+                  取消
+                </button>
+              )}
+            </div>
           </form>
           <ul className="text-sm space-y-1">
             {todos.map((t) => (
-              <li key={t.id} className="flex justify-between border-b py-1">
+              <li key={t.id} className="flex items-center justify-between gap-2 border-b py-1">
                 <span>
-                  #{t.id} {t.title} {t.parentId ? `(p:${t.parentId})` : ''}
+                  #{t.id} {t.title} {t.done ? '✅' : ''}{' '}
+                  {t.parentId ? `(p:${t.parentId})` : ''}
+                </span>
+                <span className="flex gap-1 shrink-0">
+                  <button
+                    className="rounded border px-2 py-0.5 text-xs"
+                    type="button"
+                    onClick={() => startEdit(t)}
+                  >
+                    改
+                  </button>
+                  <button
+                    className="rounded border px-2 py-0.5 text-xs text-red-600"
+                    type="button"
+                    onClick={() => delTodo(t.id)}
+                  >
+                    删
+                  </button>
                 </span>
               </li>
             ))}
@@ -175,6 +258,25 @@ export default function BasicDemo() {
           )}
         </section>
       </div>
+
+      {/* 树形展示：复用 todo 的 parentId 关系，?tree=1 返回嵌套结构 */}
+      <section className="rounded-xl border p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">树形展示（todo 的 parentId 嵌套）</h2>
+          <button className="rounded border px-2 py-1 text-sm" onClick={loadTree}>
+            刷新树
+          </button>
+        </div>
+        {tree.length === 0 ? (
+          <p className="text-sm text-gray-500">暂无数据，先在上方「Todo」区新增带 parentId 的条目</p>
+        ) : (
+          <ul className="text-sm space-y-1">
+            {tree.map((n) => (
+              <TreeNode key={n.id} node={n} />
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   )
 }

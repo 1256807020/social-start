@@ -11,7 +11,7 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ name: string }> },
 ) {
-  return toResponse(withApi(async () => {
+  return toResponse(await withApi(async () => {
     const { name } = await params
     await deleteFile(name)
     return ok({ name }, '删除成功')

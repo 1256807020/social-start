@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
 
 /** 文件列表（分页） */
 export async function GET(req: NextRequest) {
-  return toResponse(withApi(async () => {
+  return toResponse(await withApi(async () => {
     const q = toQuery(req)
     const page = Math.max(parseInt(q.page || '1', 10) || 1, 1)
     const pageSize = Math.min(Math.max(parseInt(q.pageSize || '50', 10) || 50, 1), 500)

@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 
 /** 校验验证码：body { captchaId, code } -> { success }（一次性） */
 export async function POST(req: NextRequest) {
-  return toResponse(withApi(async () => {
+  return toResponse(await withApi(async () => {
     const body = await readJson(req)
     if (!body?.captchaId || body?.code === undefined) throw badRequest('缺少 captchaId 或 code')
     const success = await verifyCaptcha(body.captchaId, String(body.code))

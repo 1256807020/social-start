@@ -10,7 +10,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ name: string }> },
 ) {
-  return toResponse(withApi(async () => {
+  return toResponse(await withApi(async () => {
     const { name } = await params
     return ok(await infoImage(name))
   }))
