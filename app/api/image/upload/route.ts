@@ -2,12 +2,13 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { ok, badRequest, withApi } from '@/lib/response'
 import { saveUpload } from '@/lib/media'
+import { toResponse } from '@/lib/route-utils'
 
 export const dynamic = 'force-dynamic'
 
 /** 上传（单张或多张，字段名 file） */
 export async function POST(req: NextRequest) {
-  return withApi(async () => {
+  return toResponse(withApi(async () => {
     const form = await req.formData()
     const files = (form.getAll('file') as unknown[]).filter(
       (f): f is File => f instanceof File && f.size > 0,

@@ -24,14 +24,16 @@ export default function BasicDemo() {
 
   const loadImages = useCallback(async () => {
     const r = await fetch('/api/image/list?pageSize=12')
-    const j = await r.json()
-    setImages(j.data || [])
+    if (!r.ok) return
+    const j = await r.json().catch(() => null)
+    if (j) setImages(j.data || [])
   }, [])
 
   const loadCap = useCallback(async () => {
     const r = await fetch('/api/captcha')
-    const j = await r.json()
-    setCap(j.data)
+    if (!r.ok) return
+    const j = await r.json().catch(() => null)
+    if (j) setCap(j.data)
     setCode('')
     setCapMsg('')
   }, [])
