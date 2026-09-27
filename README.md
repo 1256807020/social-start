@@ -379,7 +379,8 @@ export default function Hello() {
 }
 ```
 
-### B · 服务端组件 SSR（仓库范本 `app/todos`，列表服务端渲染 + 客户端子组件写）
+### B · 服务端组件 SSR（仓库范本 `app/todos`，列表服务端渲染 + 服务端分页 + 客户端子组件写）
+> 分页由 URL `?page=` 驱动（`searchParams`）：点链接 → 服务端重新按页取数，无需客户端 `fetch`。已含「新增 / 刷新」按钮（刷新 = `router.refresh()` 重新执行服务端组件）。
 ```tsx
 // app/todos/page.tsx  （Server Component：可 async/await，无需 'use client'）
 import { TodoClient, type Todo } from './todo-client'

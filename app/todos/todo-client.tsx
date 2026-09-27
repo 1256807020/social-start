@@ -4,12 +4,13 @@
 // 思路：本组件只管发请求调接口，改完调用 router.refresh()，
 // 让父级服务端组件（page.tsx）重新执行、重新拉列表——这是 App Router 里
 // "服务端渲染 + 客户端写" 的标准配合姿势。
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export type Todo = { id: number; title: string; done?: boolean; parentId?: number }
 
-export function TodoClient({ initial }: { initial: Todo[] }) {
+export function TodoClient({ initial, page, totalPages, total }: { initial: Todo[]; page: number; totalPages: number; total: number }) {
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [editing, setEditing] = useState<Todo | null>(null)
@@ -72,6 +73,10 @@ export function TodoClient({ initial }: { initial: Todo[] }) {
         <button className="rounded bg-blue-600 px-3 py-1 text-white" type="submit">
           新增
         </button>
+        {/* 刷新：router.refresh() 让服务端组件重新执行、重新取数（B 版的标准刷新姿势） */}
+        <button className="rounded border px-3 py-1" type="button" onClick={refresh}>
+          刷新
+        </button>
       </form>
 
       {/* 列表：查=SSR 已给 initial；改 / 删 在客户端 */}
@@ -107,6 +112,25 @@ export function TodoClient({ initial }: { initial: Todo[] }) {
           </li>
         ))}
       </ul>
+
+      {/* 服务端分页：点链接改 URL 的 page，服务端重新按页取数（无需客户端 fetch） */}
+      <div className="flex items-center justify-between text-sm">
+        <Link
+          href={`/todos?page=${Math.max(page - 1, 1)}`}
+          className={`px-2 py-1 border rounded ${page <= 1 ? 'pointer-events-none opacity-40' : ''}`}
+        >
+          上一页
+        </Link>
+        <span>
+          {page} / {totalPages}（共 {total}）
+        </span>
+        <Link
+          href={`/todos?page=${Math.min(page + 1, totalPages)}`}
+          className={`px-2 py-1 border rounded ${page >= totalPages ? 'pointer-events-none opacity-40' : ''}`}
+        >
+          下一页
+        </Link>
+      </div>
     </div>
   )
 }
