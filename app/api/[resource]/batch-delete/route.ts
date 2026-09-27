@@ -16,8 +16,13 @@ export async function POST(
   return toResponse(
     await withApi(async () => {
       assertName(resource)
-      const body = await readJson(req)
       const q = toQuery(req)
+      let body: any = null
+      try {
+        body = await readJson(req)
+      } catch {
+        body = null
+      }
       const ids = Array.isArray(body) ? body : body?.ids ?? q.ids
       return handlers.batchDelete(resource, ids)
     }),

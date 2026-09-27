@@ -33,6 +33,12 @@ next-env.d.ts
 /data/*.json
 /data/.*.tmp
 
+# 验证码落盘（code + svg，运行时生成）
+/data/captcha/
+
+# 运行时上传的公开文件（直接由 Next 静态托管，不入库）
+/data/uploads/
+
 # 运行时上传的公开文件（直接由 Next 静态托管，不入库）
 /public/uploads/
 
@@ -40,3 +46,5 @@ next-env.d.ts
 work/
 work
 work/*
+# vitest 隔离测试数据
+.vitest-data/
