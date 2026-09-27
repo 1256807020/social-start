@@ -180,6 +180,17 @@ curl "http://localhost:3000/api/menu?tree=1"
 - 图片服务、文件批处理、RBAC、微信等扩展模块**未纳入基座核心**（与 Next 部署模型 / Serverless
   文件系统约束不符），可作为后续按需扩展；本基座已预留 `app/api/` 路由扩展点。
 
+## 生产鉴权（进阶 / 可选，不干扰核心）
+
+- 核心 CRUD 默认**完全开放**（本地开发友好），不绑定任何鉴权。
+- 启用方式：部署时设置环境变量 `ADMIN_TOKEN=<你的密钥>`。
+- 行为：启用后，**写操作**（POST / PUT / PATCH / DELETE）必须携带正确 token；
+  **读操作**（GET / HEAD / OPTIONS，含列表、详情、统计）始终开放——兼顾 SEO 爬虫公开抓取与管理写保护。
+- 携带方式三选一：`Authorization: Bearer <token>`、`x-admin-token: <token>`、查询参数 `?adminToken=<token>`。
+- 实现位置：`middleware.ts`（Next.js 边缘中间件，仅匹配 `/api/*`）+ `lib/auth.ts`（校验逻辑）。
+  **核心 `lib/crud.ts` / `lib/json-db.ts` 零改动**，鉴权是独立的边缘层能力。
+- 鉴权失败返回统一信封 `{ code: 40001, data: null, msg: '未授权...' }`（HTTP 401）。
+
 ## 部署注意
 
 - 本基座基于本地文件系统存储（`data/*.json`），适合本地开发与自托管 Node 服务。
