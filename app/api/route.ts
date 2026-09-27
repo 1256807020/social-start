@@ -8,7 +8,7 @@ export async function GET() {
   return NextResponse.json({
     name: 'Social Start JSON API',
     message: '一个 JSON 文件 = 一套完整 CRUD。把路径里的 resource 换成你的集合名即可。',
-    health: '/api/_health',
-    collections: '/api/_collections',
+    health: '/api/health',
+    collections: '/api/collections',
   })
 }

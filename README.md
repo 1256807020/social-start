@@ -171,9 +171,10 @@ curl "http://localhost:3000/api/menu?tree=1"
 ## 与 BasicApi（koa2）的对应关系与迁移说明
 
 - 核心引擎（存储 / 查询 / CRUD / 统一响应）**逻辑等价移植**，业务接口契约一致。
-- 因 **Next.js App Router 把 `_` 前缀文件夹视为私有文件夹（不注册路由）**，原 BasicApi 的
-  `/api/_health`、`/api/_collections`、`/api/:resource/_count` 在本基座改为
+- 系统/元数据接口遵循 **Next.js 标准路由约定**（不以 `_` 下划线前缀隐藏路由）：
   `/api/health`、`/api/collections`、`/api/:resource/count`。
+  相对原 BasicApi 的 `/api/_health`、`/api/_collections`、`/api/:resource/_count` 写法，
+  本基座去掉了下划线私有文件夹前缀，让这些端点作为常规路由直接可访问。
 - 鉴权（`adminToken`）未内置：原 BasicApi 的清空/删除集合接口默认开放（本地开发友好）。
   生产环境可在 `lib/crud.ts` 或路由层接入 Next 中间件做鉴权。
 - 图片服务、文件批处理、RBAC、微信等扩展模块**未纳入基座核心**（与 Next 部署模型 / Serverless
