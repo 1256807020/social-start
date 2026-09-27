@@ -57,3 +57,130 @@ pnpm dlx shadcn@latest add button
 
 - `main` — 主干
 - `basic` — 开发分支
+
+---
+
+# JSON CRUD 全栈基座（核心功能）
+
+> 把原 **BasicApi（koa2）** 的「一个 JSON 文件 = 一套完整 CRUD 接口」核心思想，完整重写为 **Next.js App Router** 全栈版本，作为快速开发基座。
+
+## 核心思想
+
+**一个 JSON 文件 = 一张表 = 一套完整 CRUD 接口。** 无需数据库、无需写接口代码：
+
+- 新建一个集合文件 `data/<resource>.json`（或直接 POST 即自动创建），就拥有了该资源的
+  增删改查、分页、字段过滤、排序、关键字搜索、字段投影、树形、批量操作等能力。
+- 统一响应：`{ code, data, msg, total?, page?, pageSize?, totalPages? }`，`code === 0` 表示成功。
+
+## 工作原理
+
+- **集合**：`data/<resource>.json`，内容必须是数组，每个元素是一条记录（建议含 `id`）。
+- **存储引擎**（`lib/json-db.ts`）：读带 mtime 缓存；写采用「临时文件 + rename」原子替换，避免写一半损坏；
+  per-集合写队列保证同一集合的 读-改-写 串行执行，天然避免并发覆盖。
+- **id**：请求体不传 `id` 时自动生成递增数字 id（带时间戳）；传了且已存在则报错。
+- **时间戳**：默认自动维护 `createdAt` / `updatedAt`（可用 `AUTO_TIMESTAMP=0` 关闭）。
+
+## 目录结构（新增部分）
+
+```
+lib/json-db.ts          存储引擎（读/写/事务/集合管理/原子写）
+lib/query.ts            查询语法（分页/排序/过滤/关键字/字段操作符/树形）
+lib/response.ts         统一响应与错误码
+lib/crud.ts             通用 CRUD 处理函数（纯逻辑，与框架解耦）
+lib/route-utils.ts      路由层工具（提取 query / 解析 body / 包装响应）
+app/api/[resource]/route.ts            列表 / 新增 / 清空
+app/api/[resource]/[id]/route.ts       详情 / 全量替换(PUT) / 增量修改(PATCH) / 删除
+app/api/[resource]/count/route.ts       数量统计（支持过滤）
+app/api/[resource]/batch-create/        批量新增（body 为数组）
+app/api/[resource]/batch-update/        批量修改（body 为 [{ id, ... }]）
+app/api/[resource]/batch-delete/        批量删除（{ ids:[...] } 或 [..] 或 ids=1,2）
+app/api/health/route.ts                 健康检查
+app/api/collections/route.ts            集合列表（记录数 / 体积 / 更新时间）
+app/api/collections/[name]/route.ts     集合详情（字段结构自动推断 + 前 5 条预览）/ 删除
+```
+
+## API 速查
+
+### 业务接口（`resource` = 集合名，不含 `.json`）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/{resource}` | 列表（分页 / 过滤 / 排序 / 关键字 / 树形 / 投影） |
+| POST | `/api/{resource}` | 新增单条（body 为对象）或批量（body 为数组） |
+| DELETE | `/api/{resource}?confirm=1` | 清空集合（需 `confirm=1` 防误删） |
+| GET | `/api/{resource}/{id}` | 详情 |
+| PUT | `/api/{resource}/{id}` | 全量替换 |
+| PATCH | `/api/{resource}/{id}` | 增量修改 |
+| DELETE | `/api/{resource}/{id}` | 删除单条 |
+| GET | `/api/{resource}/count` | 数量统计（支持过滤条件） |
+| POST | `/api/{resource}/batch-create` | 批量新增（数组） |
+| POST | `/api/{resource}/batch-update` | 批量修改（`[{ id, ... }]`） |
+| POST | `/api/{resource}/batch-delete` | 批量删除（`{ ids:[...] }` 或 `[..]` 或 `ids=1,2`） |
+
+### 管理接口
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/health` | 健康检查（环境 / 运行时长 / 集合数 / 数据目录） |
+| GET | `/api/collections` | 集合列表 |
+| GET | `/api/collections/{name}` | 集合详情：字段结构自动推断 + 前 5 条预览 |
+| DELETE | `/api/collections/{name}` | 删除集合文件 |
+
+### 查询语法（GET 列表的 query 参数）
+
+- **分页**：`page`、`pageSize`（默认 10，上限 500）、`currentPage`
+- **排序**：`sort=field1,-field2`（`-` 降序、`+` 升序）、`order=asc|desc`
+- **关键字**：`keyword=文本`、`keywordFields=f1,f2`（限定搜索字段）
+- **投影**：`fields=f1,f2`（只返回指定字段）
+- **字段过滤操作符**（加在字段名后缀）：`_like` `_in` `_nin` `_ne` `_gte` `_lte` `_gt` `_lt`
+  例如：`status=1`、`age_gte=18`、`name_like=张`
+- **树形**：`tree=1`、`parentKey=parentId`、`childrenKey=children`
+
+## 配置（环境变量）
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `DATA_DIR` | `data` | 数据目录 |
+| `PAGE_SIZE` | `10` | 默认每页条数 |
+| `MAX_PAGE_SIZE` | `500` | 每页上限 |
+| `AUTO_TIMESTAMP` | `1` | 是否自动维护 `createdAt`/`updatedAt`（设 `0` 关闭） |
+
+## 示例
+
+```bash
+# 启动
+pnpm dev   # http://localhost:3000
+
+# 新增一条
+curl -X POST http://localhost:3000/api/post -H 'Content-Type: application/json' \
+  -d '{"title":"Hello","status":1}'
+
+# 列表：第 1 页、每页 10、按 id 降序、状态=1
+curl "http://localhost:3000/api/post?page=1&pageSize=10&sort=-id&status=1"
+
+# 批量新增
+curl -X POST http://localhost:3000/api/post -H 'Content-Type: application/json' \
+  -d '[{"title":"A","status":1},{"title":"B","status":0}]'
+
+# 树形菜单
+curl -X POST http://localhost:3000/api/menu -H 'Content-Type: application/json' \
+  -d '[{"id":1,"name":"系统","parentId":0},{"id":2,"name":"用户","parentId":1}]'
+curl "http://localhost:3000/api/menu?tree=1"
+```
+
+## 与 BasicApi（koa2）的对应关系与迁移说明
+
+- 核心引擎（存储 / 查询 / CRUD / 统一响应）**逻辑等价移植**，业务接口契约一致。
+- 因 **Next.js App Router 把 `_` 前缀文件夹视为私有文件夹（不注册路由）**，原 BasicApi 的
+  `/api/_health`、`/api/_collections`、`/api/:resource/_count` 在本基座改为
+  `/api/health`、`/api/collections`、`/api/:resource/count`。
+- 鉴权（`adminToken`）未内置：原 BasicApi 的清空/删除集合接口默认开放（本地开发友好）。
+  生产环境可在 `lib/crud.ts` 或路由层接入 Next 中间件做鉴权。
+- 图片服务、文件批处理、RBAC、微信等扩展模块**未纳入基座核心**（与 Next 部署模型 / Serverless
+  文件系统约束不符），可作为后续按需扩展；本基座已预留 `app/api/` 路由扩展点。
+
+## 部署注意
+
+- 本基座基于本地文件系统存储（`data/*.json`），适合本地开发与自托管 Node 服务。
+- Serverless（如 Vercel）文件系统只读，需挂载持久卷或**替换 `lib/json-db.ts` 的存储实现**
+  （如改用数据库）。上层 API 与查询语法不变，只需替换存储后端即可平滑迁移。

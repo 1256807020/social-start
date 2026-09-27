@@ -28,3 +28,12 @@ next-env.d.ts
 
 # IDE / agent data
 .codebuddy/
+
+# JSON 数据（运行时生成，不入库）
+/data/*.json
+/data/.*.tmp
+
+# 参考项目（从 BasicApi 拷贝的 koa2 源码，仅本地参考，不入库）
+work/
+work
+work/*
