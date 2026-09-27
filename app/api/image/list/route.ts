@@ -1,0 +1,23 @@
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { ok, withApi } from '../../../../lib/response'
+import { listImages } from '../../../../lib/media'
+import { toQuery } from '../../../../lib/route-utils'
+
+export const dynamic = 'force-dynamic'
+
+/** 图片列表（分页） */
+export async function GET(req: NextRequest) {
+  return withApi(async () => {
+    const q = toQuery(req)
+    const page = Math.max(parseInt(q.page || '1', 10) || 1, 1)
+    const pageSize = Math.min(Math.max(parseInt(q.pageSize || '50', 10) || 50, 1), 500)
+    const r = await listImages(pageSize, (page - 1) * pageSize)
+    return ok(r.items, 'success', {
+      total: r.total,
+      page,
+      pageSize,
+      totalPages: Math.max(Math.ceil(r.total / pageSize), 1),
+    })
+  })
+}

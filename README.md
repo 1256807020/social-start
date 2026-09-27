@@ -196,3 +196,61 @@ curl "http://localhost:3000/api/menu?tree=1"
 - 本基座基于本地文件系统存储（`data/*.json`），适合本地开发与自托管 Node 服务。
 - Serverless（如 Vercel）文件系统只读，需挂载持久卷或**替换 `lib/json-db.ts` 的存储实现**
   （如改用数据库）。上层 API 与查询语法不变，只需替换存储后端即可平滑迁移。
+
+## 接口能力概览
+
+> 统一响应信封：`{ code, data, msg, total?, page?, pageSize?, totalPages? }`（`code=0` 成功）。
+> 设 `ADMIN_TOKEN` 后，所有**写操作**需携带 token（见「生产鉴权」）；**读操作**始终开放。
+
+### 一、通用 CRUD（一个集合 = 一套完整接口）
+把 URL 里的 `:resource` 换成任意集合名（如 `menu`、`article`、`todo`）即可，无需写代码：
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/:resource` | 列表：分页 / 过滤 / 排序 / 关键字 / 字段投影 / 树形 |
+| POST | `/api/:resource` | 新增：对象=单条，数组=批量 |
+| GET | `/api/:resource/count` | 数量统计（支持过滤条件） |
+| GET | `/api/:resource/:id` | 详情 |
+| PUT | `/api/:resource/:id` | 修改：默认增量合并；`?replace=1` 全量替换 |
+| DELETE | `/api/:resource/:id` | 删除单条 |
+| POST | `/api/:resource/batch-create` | 批量新增（数组） |
+| POST | `/api/:resource/batch-update` | 批量修改（`[{id,...}]`） |
+| DELETE | `/api/:resource/batch-delete` | 批量删除（`{ ids:[1,2] }` 或 `ids=1,2`） |
+| DELETE | `/api/:resource?confirm=1` | 清空集合 |
+
+### 二、系统 / 元数据
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api` | API 索引 |
+| GET | `/api/health` | 健康检查 |
+| GET | `/api/collections` | 集合列表（含记录数 / 体积） |
+| DELETE | `/api/collections/:name` | 删除集合 |
+
+### 三、媒体 / 图片（进阶，独立模块）
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/image/upload` | 上传（单/多文件，字段名 `file`，存 `data/uploads`） |
+| GET | `/api/image/list` | 图片列表（分页） |
+| GET | `/api/image/info/:name` | 图片信息 |
+| DELETE | `/api/image/:name` | 删除图片 |
+| GET | `/api/image/placeholder/:size` | 占位图 SVG（`/api/image/placeholder/300x200?text=hi`） |
+| GET | `/img/:name` | 静态访问（公开，带缓存） |
+
+### 四、查询参数（GET 列表 / 计数通用）
+- 分页：`page`、`pageSize`（上限 500）、`currentPage`
+- 排序：`sort=字段`（前缀 `-` 降序）、`order=asc|desc`
+- 过滤：任意字段；操作符后缀 `_like` `_in` `_nin` `_ne` `_gte` `_lte` `_gt` `_lt`
+- 关键字：`keyword`、`keywordFields=字段1,字段2`
+- 投影：`fields=字段1,字段2`
+- 树形：`tree=1`、`parentKey`（默认 `parentId`）、`childrenKey`（默认 `children`）
+
+### 五、可返回的响应数据类型
+单对象（详情） / 数组（裸 `data`） / 数组带分页（`{items,total,page,...}`） /
+树状嵌套（`children`） / 统计（`{total}`） / 操作结果（如 `{deleted:3}`） /
+统一错误信封（`{code,msg}`） / 二进制流（图片、`image/svg+xml` 占位图）。
+
+### 六、BasicApi 仍可按需迁入的进阶能力（均不干扰核心）
+- **文件批处理**：批量导入 / 导出 JSON、CSV（`work/file/`）——进阶工具。
+- **RBAC 完整权限体系**：用户 / 角色 / 权限 / 部门（`work/router/rbac/`）——较重，建议分阶接入。
+- **通用非图片附件上传**：当前媒体模块限定图片格式，可放宽支持任意文件。
+- **微信 / 社区互动 / 积分**等业务特定模块（`work/other/` 设计文档）——按需。
