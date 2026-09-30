@@ -1,0 +1,24 @@
+.alert {
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  margin: 8px 0;
+}
+
+.success {
+  background: #e6ffed;
+  color: #1a7f37;
+  border-color: #a3d9b1;
+}
+
+.error {
+  background: #ffecec;
+  color: #c0392b;
+  border-color: #e6a3a3;
+}
+
+.info {
+  background: #eef4ff;
+  color: #1f5fbf;
+  border-color: #a9c5f0;
+}
