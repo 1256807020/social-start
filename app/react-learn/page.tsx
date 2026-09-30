@@ -13,8 +13,138 @@
 //   useEffect(fn, [])  ≈  created() / mounted()（依赖为空数组 = 只跑一次）
 // ============================================================
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, memo, Fragment, type ReactNode } from "react";
 import "./page.css";
+
+// ===== 简单档新增案例（模块级定义，避免“组件内定义组件”导致每次父渲染都重挂载）=====
+// React.memo 演示：被 memo 包裹的组件，props 不变时跳过重渲染
+const MemoChild = memo(function MemoChild({ text }: { text: string }) {
+  console.log("MemoChild 渲染了（props 没变就不该出现）");
+  return <li className="text-green-600">[memo] {text}</li>;
+});
+// 对照：普通子组件，父组件每次重渲染它都跟着渲染
+const PlainChild = function PlainChild({ text }: { text: string }) {
+  console.log("PlainChild 渲染了（每次父重渲染都出现）");
+  return <li className="text-red-600">[plain] {text}</li>;
+};
+
+// ① useRef：挂载自动聚焦 + 用 ref 存“上一次的值”
+const UseRefDemo = () => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const prevTitle = useRef<string>("");
+  const [val, setVal] = useState("");
+  useEffect(() => {
+    inputRef.current?.focus(); // 挂载后自动聚焦
+  }, []);
+  const showPrev = () => {
+    alert(`当前：${val}，上一次：${prevTitle.current}`);
+  };
+  return (
+    <div className="rounded border p-2">
+      <p className="font-semibold">① useRef 演示</p>
+      <input
+        ref={inputRef}
+        className="rounded border px-2 py-1"
+        value={val}
+        placeholder="打字后点按钮看上一次的值"
+        onChange={(e) => {
+          prevTitle.current = val; // ref 改了不触发重渲染
+          setVal(e.target.value);
+        }}
+      />
+      <button className="ml-2 rounded bg-gray-700 px-2 py-1 text-white" onClick={showPrev}>
+        看上一次的值
+      </button>
+    </div>
+  );
+};
+
+// ② 非受控组件：defaultValue + useRef 读值（对标 v-model 受控版）
+const UncontrolledInput = () => {
+  const ref = useRef<HTMLInputElement>(null);
+  const [submitted, setSubmitted] = useState("");
+  return (
+    <div className="rounded border p-2">
+      <p className="font-semibold">② 非受控组件（defaultValue + ref 读值）</p>
+      <input
+        ref={ref}
+        defaultValue="初始值（不受 state 控制）"
+        className="rounded border px-2 py-1"
+      />
+      <button
+        className="ml-2 rounded bg-gray-700 px-2 py-1 text-white"
+        onClick={() => setSubmitted(ref.current?.value ?? "")}
+      >
+        读取值
+      </button>
+      {submitted && <span className="ml-2 text-sm">提交的值：{submitted}</span>}
+    </div>
+  );
+};
+
+// ③ 多字段表单：一个对象 state 管多个 input，onChange 按 name 分发
+const MultiFieldForm = () => {
+  const [form, setForm] = useState({ name: "", email: "" });
+  return (
+    <div className="rounded border p-2">
+      <p className="font-semibold">③ 多字段表单（对象 state + 按 name 分发）</p>
+      <input
+        name="name"
+        className="mr-2 rounded border px-2 py-1"
+        placeholder="姓名"
+        value={form.name}
+        onChange={(e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))}
+      />
+      <input
+        name="email"
+        className="rounded border px-2 py-1"
+        placeholder="邮箱"
+        value={form.email}
+        onChange={(e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))}
+      />
+      <p className="text-sm">state：{JSON.stringify(form)}</p>
+    </div>
+  );
+};
+
+// ④ 显式 Fragment：列表里包多个节点必须写 <Fragment key>，简写 <> 不能带 key
+const FragmentDemo = () => {
+  const rows = [
+    { id: 1, a: "A1", b: "B1" },
+    { id: 2, a: "A2", b: "B2" },
+  ];
+  return (
+    <div className="rounded border p-2">
+      <p className="font-semibold">④ 显式 Fragment（带 key 包多节点）</p>
+      <ul>
+        {rows.map((r) => (
+          <Fragment key={r.id}>
+            <li>左：{r.a}</li>
+            <li>右：{r.b}</li>
+          </Fragment>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+// ⑤ React.memo 演示：点按钮父组件重渲染，PlainChild 每次都渲染，MemoChild 只在 props 变时渲染
+const MemoDemoParent = () => {
+  const [n, setN] = useState(0);
+  return (
+    <div className="rounded border p-2">
+      <p className="font-semibold">⑤ React.memo（打开 Console 看渲染日志）</p>
+      <button className="rounded bg-blue-600 px-2 py-1 text-white" onClick={() => setN((x) => x + 1)}>
+        父组件重渲染（{n}）
+      </button>
+      <ul>
+        <MemoChild text="我不变" />
+        <PlainChild text="我不变" />
+      </ul>
+    </div>
+  );
+};
+
 export default function ReactLearnPage() {
   // 👉 手敲区 1：声明两个 state
   //   - title: 字符串，绑定输入框
@@ -384,17 +514,23 @@ export default function ReactLearnPage() {
       <SpeedMessage speed={135}></SpeedMessage>
       <SpeedMessage speed={235}></SpeedMessage>
       <ItemList></ItemList>
+      {/* 简单档新增案例（useRef / 非受控 / 多字段表单 / 显式 Fragment / React.memo）*/}
+      <UseRefDemo></UseRefDemo>
+      <UncontrolledInput></UncontrolledInput>
+      <MultiFieldForm></MultiFieldForm>
+      <FragmentDemo></FragmentDemo>
+      <MemoDemoParent></MemoDemoParent>
     </main>
   );
 }
 
 /*
-=== 接口契约（复用 social-start 自带 /api/todo，同源无需跨域）===
-POST /api/todo
+=== 接口契约（本练习用自建路由 /api/react-learn，同源无需跨域）===
+POST /api/react-learn
   body : { title: string, done?: boolean }
   resp : { code: 0, data: { id, title, done, createdAt, updatedAt }, msg: '新增成功' }
 
-GET  /api/todo?page=1&pageSize=8&sort=-id
+GET  /api/react-learn?page=1&pageSize=5&sort=-id
   resp : { code: 0, data: [...], total, totalPages, page, pageSize }
-  （练习 2 会用到：useEffect 里 GET 拉列表 + 分页）
+  （useEffect 里 GET 拉列表 + 分页；pageSize 默认 5，加 6 条即可见多页）
 */
