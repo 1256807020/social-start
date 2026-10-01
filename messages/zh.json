@@ -1,0 +1,11 @@
+{
+  "Home": {
+    "title": "国际化示例",
+    "welcome": "欢迎来到 Next.js + next-intl 演示页面",
+    "home": "返回首页"
+  },
+  "Nav": {
+    "zh": "中文",
+    "en": "English"
+  }
+}

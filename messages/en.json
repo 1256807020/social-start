@@ -1,0 +1,11 @@
+{
+  "Home": {
+    "title": "i18n Demo",
+    "welcome": "Welcome to the Next.js + next-intl demo page",
+    "home": "Back home"
+  },
+  "Nav": {
+    "zh": "中文",
+    "en": "English"
+  }
+}
