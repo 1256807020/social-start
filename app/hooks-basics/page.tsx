@@ -11,14 +11,14 @@
 // ============================================================
 
 import {
-  useRef,
-  useState,
+  createContext,
+  memo,
+  useCallback,
+  useContext,
   useEffect,
   useMemo,
-  useCallback,
-  createContext,
-  useContext,
-  memo,
+  useRef,
+  useState,
 } from "react";
 
 // ============================================================
@@ -33,7 +33,9 @@ const UseRefDemo = () => {
   // 👉 1) 挂载后自动聚焦：useEffect(() => { inputRef.current?.focus(); }, [])
   // 👉 2) onChange：先 prevTitle.current = val（记下旧值），再 setVal(e.target.value)
   // 👉 3) 按钮“看上一次”：alert(`当前：${val}，上一次：${prevTitle.current}`)
-
+  useEffect(() => {
+    inputRef.current?.focus(); // 看光标在输入框中闪烁
+  }, []);
   return (
     <section className="rounded border p-3">
       <h2 className="font-bold">① useRef（自动聚焦 + 存上一次的值）</h2>
@@ -70,8 +72,11 @@ const UseMemoDemo = () => {
 
   // 👉 const filtered = useMemo(() => list.filter(u => u.name.includes(query)), [list, query])
   // 对比：不加 useMemo，每次渲染都重跑 filter；加了只在 list/query 变时算。
-  const filtered = list; // 👉 替换成上面的 useMemo 结果
-
+  // const filtered = list; // 👉 替换成上面的 useMemo 结果
+  const filtered = useMemo(
+    () => list.filter((u) => u.name.includes(query)),
+    [list, query]
+  );
   return (
     <section className="rounded border p-3">
       <h2 className="font-bold">② useMemo（缓存过滤结果）</h2>
@@ -81,7 +86,9 @@ const UseMemoDemo = () => {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
-      <p className="text-sm">匹配 {filtered.length} 条（在 Console 看渲染次数体会差异）</p>
+      <p className="text-sm">
+        匹配 {filtered.length} 条（在 Console 看渲染次数体会差异）
+      </p>
       <ul className="max-h-32 overflow-auto text-sm">
         {filtered.slice(0, 20).map((u) => (
           <li key={u.id}>{u.name}</li>
@@ -104,7 +111,10 @@ const MemoChild = memo(function MemoChild({
 }) {
   console.log("MemoChild 渲染了（函数引用稳定就不该出现）");
   return (
-    <button className="rounded bg-blue-600 px-2 py-1 text-white" onClick={onClick}>
+    <button
+      className="rounded bg-blue-600 px-2 py-1 text-white"
+      onClick={onClick}
+    >
       {label}
     </button>
   );
@@ -116,13 +126,15 @@ const UseCallbackDemo = () => {
   // 👉 const handle = useCallback(() => setN(x => x + 1), [])
   // 空依赖 → handle 引用永远不变 → MemoChild 不会被白白重渲染。
   // 若直接写 () => setN(x=>x+1)，每次渲染都是新函数，memo 白费。
-  const handle = () => setN((x) => x + 1); // 👉 替换成上面 useCallback 版本
-
+  // const handle = () => setN((x) => x + 1); // 👉 替换成上面 useCallback 版本
+  const handle = useCallback(() => setN((x) => x + 1), []);
   return (
     <section className="rounded border p-3">
       <h2 className="font-bold">③ useCallback + memo（稳定函数引用）</h2>
       <MemoChild onClick={handle} label="点我 +1" />
-      <span className="ml-2">计数：{n}（打开 Console 看 MemoChild 是否重渲染）</span>
+      <span className="ml-2">
+        计数：{n}（打开 Console 看 MemoChild 是否重渲染）
+      </span>
     </section>
   );
 };
@@ -137,17 +149,22 @@ const UseCallbackDemo = () => {
 //     const toggle = () => setOn(v => !v);
 //     return [on, toggle] as const;   // as const 保留元组类型
 //   }
-function useToggle(initial = false) {
-  const [on, setOn] = useState(initial);
-  const toggle = () => setOn((v) => !v);
-  return [on, toggle] as const;
-}
+// function useToggle(initial = false) {
+//   const [on, setOn] = useState(initial);
+//   const toggle = () => setOn((v) => !v);
+//   return [on, toggle] as const;
+// }
 
+function useMyToggle(initBoolean = false) {
+  const [open, setOpen] = useState(initBoolean);
+  const toggle = () => setOpen((v) => !v);
+  return [open, toggle] as const;
+}
 const UseCustomHookDemo = () => {
-  const [open, toggle] = useToggle(); // 👉 直接用自定义 hook
+  const [open, toggle] = useMyToggle(); // 👉 直接用自定义 hook
   return (
     <section className="rounded border p-3">
-      <h2 className="font-bold">④ 自定义 Hook（useToggle）</h2>
+      <h2 className="font-bold">④ 自定义 Hook（useMyToggle）</h2>
       <button className="rounded border px-2 py-1" onClick={toggle}>
         {open ? "收起" : "展开"}
       </button>
@@ -192,7 +209,9 @@ const DeepChild = () => {
 export default function HooksBasicsPage() {
   return (
     <main className="mx-auto max-w-3xl space-y-4 p-6">
-      <h1 className="text-2xl font-bold">中级基础 · 内置 Hook（useRef/useMemo/useCallback/自定义Hook/Context）</h1>
+      <h1 className="text-2xl font-bold">
+        中级基础 · 内置 Hook（useRef/useMemo/useCallback/自定义Hook/Context）
+      </h1>
       <p className="text-sm text-gray-500">
         分支 learn/basic-react-0002 ｜ 纯 React 内置，零依赖 ｜ 标 👉 处由你手敲
       </p>
