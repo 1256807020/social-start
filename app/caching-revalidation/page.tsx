@@ -2,7 +2,7 @@ import { revalidateTag } from "next/cache";
 
 /**
  * 高阶 · Next.js 缓存与重新验证（caching & revalidation）
- * 搬运并适配自外部 demo: caching-revalidation-demo（原版 Next 15: fetch cache + unstable_cache）
+ * 
  *
  * 适配点（本仓库 = Next 16.3 + 自带 /api JSON 引擎，无 json-server / Prisma）：
  *   - 数据源改为 social-start 自带的 GET /api/todo（零外部依赖，无需起 json-server）
@@ -12,7 +12,7 @@ import { revalidateTag } from "next/cache";
 
 type Todo = { id: number | string; title: string; done?: boolean };
 
-// ① 默认/强制缓存：同样 URL 的结果按 URL 缓存（原 demo 的 json-server-products 页）
+// ① 默认/强制缓存：同样 URL 的结果按 URL 缓存
 async function getForceCache(): Promise<Todo[]> {
   const res = await fetch("http://localhost:4000/api/todo", { cache: "force-cache" });
   return (await res.json()).data;
@@ -30,7 +30,7 @@ async function getNoStore(): Promise<Todo[]> {
   return (await res.json()).data;
 }
 
-// ④ 打 tag 的读取：配合 revalidateTag 做“重新验证”（原 demo 的 prisma-products/unstable_cache 的等价物）
+// ④ 打 tag 的读取：配合 revalidateTag 做“重新验证”
 async function getTagged(): Promise<Todo[]> {
   const res = await fetch("http://localhost:4000/api/todo", {
     cache: "force-cache",
