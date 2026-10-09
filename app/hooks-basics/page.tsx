@@ -3,7 +3,8 @@
 // ============================================================
 // React 中级 · 基础内置 Hook 练习（learn/basic-react-0002）
 // 本页只练【纯 React 内置、零依赖】的部分，对应路线“中级”前三项：
-//   useRef / useMemo / useCallback / 自定义 Hook / Context
+//   useRef / useMemo / useCallback / useEffect / useImperativeHandle / 自定义 Hook / Context
+//   （useLayoutEffect / useReducer / useId / useTransition 等见顶部“Hook 签名速记”，本页不逐一展开）
 // 状态库（Zustand / Redux）/ 表单校验（react-hook-form+Zod）各自独立分支，不在这里。
 //
 // 老师只搭外壳 + 说明，所有标 👉 的地方由【你】手写完成。
@@ -54,12 +55,34 @@
 // 异形族：useState(初值) / useRef(初值) / useReducer / useContext(Ctx) / useId 等，没有依赖数组。
 // ------------------------------------------------------------
 
-import {
+// ------------------------------------------------------------
+// 从 Vue2 转 React 的心智切换（看着用）
+// Vue2 里常直接 list.push(x) / arr.splice(i,1) / obj.key = val 改数据，
+// 因为 Vue 的响应式会拦截这些“赋值/改写”并自动重渲染。
+// React 不一样：state 是【不可变】的，React 靠“引用（地址）变了没”判断要不要重渲染。
+//   → 直接改 state 本身（原地 push / 直接赋值），地址没变 → React 以为没变 → 不重渲染 → UI 卡住。
+//   → 正确做法：用 setXxx(新值) 去“替换”，而不是“修改”。
+// 不可变更新速查（数组）：
+//   尾部加(push)     setList([...list, x])
+//   头部加(unshift)  setList([x, ...list])
+//   删尾部(pop)      setList(list.slice(0, -1))
+//   删头部(shift)    setList(list.slice(1))
+//   改某项           setList(list.map((it, i) => i === idx ? x : it))
+//   删某项(splice)   setList(list.filter((_, i) => i !== idx))
+//   排序(不原地)     list.toSorted(...)        // ES2023，返回新数组，原数组不动
+// 对象同理：obj.key = val ❌ → setObj({ ...obj, key: val }) ✅
+// 口诀：React 不“改”state，而是“给”一个新的 state。
+// ------------------------------------------------------------
+
+// 现代语法小Tip：ES2023 有 toSorted / toReversed / toSpliced 等“不改动原数组、直接返回新数组”的方法，写起来更省事（现代浏览器 / Next 环境一般支持；要兼容老环境就用上面的展开写法）。
+ import {
   createContext,
+  forwardRef,
   memo,
   useCallback,
   useContext,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -277,11 +300,129 @@ const DeepChild = () => {
   );
 };
 
+// ============================================================
+// 练习 6：useEffect —— 同形家族的“副作用”分支
+// 对照 ② useMemo：签名完全一样 (() => X, [deps])，但用途不同——
+//   useMemo 返回【值】用于渲染；useEffect 不返回值，只跑【副作用】（改标题/发请求/打日志）。
+// useEffect 的返回值根本不参与渲染。它要么不返回，要么返回一个清理函数（cleanup），而这个清理函数是交给 React 在"拆台"时自动调用的，不是给你拿去渲染的。
+// useEffect(() => {
+//   // 函数体 = 副作用（动作）：发请求、加监听、起定时器
+//   // ...
+//   return undefined;        // ① 什么都不返回（最常见）
+//   // 或
+//   return () => { /* 清理函数 */ }; // ② 返回一个函数，React 在"收尾"时调用它
+// }, [deps]);
+// 清理函数干嘛用（关键）
+// 它在两种时机被 React 自动调用：
+
+// 依赖变化、effect 即将重跑前 → 先清理旧的
+// 组件卸载时 → 彻底清理
+// 目的就是"撤销副作用"，避免内存泄漏 / 重复监听。最常见的例子——定时器
+// useMemo 的返回是"产物"（你消费）；useEffect 的返回是"善后"（React 消费），而且通常是清理函数。 所以你说"useEffect 返回的如何理解"——它返回的（若有）不是数据，是"怎么撤销我刚才做的事"。
+// ============================================================
+const UseEffectDemo = () => {
+  const [k, setK] = useState(0);
+  const [log, setLog] = useState<string[]>([]);
+  const [now, setNow] = useState(0);
+  // 👉 同形：() => {}, [k] —— k 变才重跑（挂载时也跑一次）
+  useEffect(() => {
+    console.log("⑥ useEffect 跑了（k 变了）");
+    setLog((prev) => [`k=${k} 时副作用触发`, ...prev].slice(0, 5));
+    // 典型副作用：document.title = `计数 ${k}`;
+  }, [k]);
+  //   被渲染的是 now（来自 state），不是 effect 的返回值。
+  // effect 函数体"起定时器"是动作；返回的 () => clearInterval(id) 是"怎么收场"。
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000); // 动作：起定时器
+    return () => clearInterval(id); // 清理：卸定时器
+  }, []);
+
+  return (
+    <section className="rounded border p-3">
+      <h2 className="font-bold">⑥ useEffect（同形家族 · 副作用版）</h2>
+      <button
+        className="rounded border px-2 py-1"
+        onClick={() => setK((x) => x + 1)}
+      >
+        改 k：{k}---当前时间：{new Date(now).toLocaleTimeString()}
+      </button>
+      <p className="text-sm">
+        点按钮看 Console + 下方日志（仅 k 变时触发；和 ② useMemo
+        同形，但返回的是“动作”不是“值”）
+      </p>
+      <ul className="text-xs text-gray-500">
+        {log.map((l, i) => (
+          <li key={i}>{l}</li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
+// ============================================================
+// 练习 7：useImperativeHandle —— 同形家族的“ref 暴露方法”分支
+// 对照 ② useMemo：签名还是 (() => X, [deps])，但第一个参数是 ref，
+//   作用是把“子组件的方法”通过 ref 暴露给父组件调用（反向操作 DOM）。
+// ============================================================
+type ChildHandle = { focus: () => void; blink: () => void };
+const FancyInput = forwardRef<ChildHandle>((_, ref) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [on, setOn] = useState(false);
+
+  // 👉 同形：() => ({...}), [] —— 把方法挂到 ref 上，父组件可调用
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus: () => inputRef.current?.focus(),
+      blink: () => setOn((v) => !v),
+    }),
+    []
+  );
+
+  return (
+    <input
+      ref={inputRef}
+      className={`rounded border px-2 py-1 ${on ? "bg-yellow-200" : ""}`}
+      placeholder="父组件可调用我的方法"
+    />
+  );
+});
+FancyInput.displayName = "FancyInput";
+
+const UseImperativeHandleDemo = () => {
+  const childRef = useRef<ChildHandle>(null);
+  return (
+    <section className="rounded border p-3">
+      <h2 className="font-bold">
+        ⑦ useImperativeHandle（同形家族 · 暴露方法给父）
+      </h2>
+      <FancyInput ref={childRef} />
+      <button
+        className="ml-2 rounded border px-2 py-1"
+        onClick={() => childRef.current?.focus()}
+      >
+        父调用 focus()
+      </button>
+      <button
+        className="ml-2 rounded border px-2 py-1"
+        onClick={() => childRef.current?.blink()}
+      >
+        父调用 blink()
+      </button>
+      <p className="text-sm">
+        点按钮，父组件通过 ref 直接调子组件的方法（方法体也是箭头函数、依赖写
+        []，同形）
+      </p>
+    </section>
+  );
+};
+
 export default function HooksBasicsPage() {
   return (
     <main className="mx-auto max-w-3xl space-y-4 p-6">
       <h1 className="text-2xl font-bold">
-        中级基础 · 内置 Hook（useRef/useMemo/useCallback/自定义Hook/Context）
+        中级基础 · 内置
+        Hook（useRef/useMemo/useCallback/useEffect/useImperativeHandle/自定义Hook/Context）
       </h1>
       <p className="text-sm text-gray-500">
         分支 learn/basic-react-0002 ｜ 纯 React 内置，零依赖 ｜ 标 👉 处由你手敲
@@ -297,6 +438,10 @@ export default function HooksBasicsPage() {
           <DeepChild />
         </section>
       </ThemeProvider>
+
+      {/* 同形家族对照：useEffect / useImperativeHandle 与 ② useMemo 签名一致 */}
+      <UseEffectDemo />
+      <UseImperativeHandleDemo />
     </main>
   );
 }
