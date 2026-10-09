@@ -32,7 +32,7 @@ type Action =
 
 // 👉 手敲：reducer 纯函数，根据 action 返回新 state（不可变更新）
 function cartReducer(state: State, action: Action): State {
-  console.log(action);
+  // 把 cartReducer 的三个 case 想成 Vuex 的 mutation（同步）
   switch (action.type) {
     case "ADD":
       // 👉 若已存在同 id 则 qty+1，否则追加（不可变写法）
