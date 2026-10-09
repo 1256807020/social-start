@@ -10,6 +10,50 @@
 // 跑法：pnpm dev → http://localhost:4000/hooks-basics
 // ============================================================
 
+// ------------------------------------------------------------
+// Hook 签名速记（判断一个 hook 长什么样）
+// 1) “回调 + 依赖数组”是【effect / 派生】类 hook 的通用形态：
+//      useEffect / useLayoutEffect / useMemo / useCallback / useImperativeHandle
+//      第一个参数是“要做什么”，第二个参数是“什么时候重跑（依赖）”。
+// 2) 凡是“算出来要被渲染用到的（值 / 函数）”→ 大概率用 useMemo / useCallback 这种 (() => {}, [deps]) 形。
+// 3) 凡是“存状态 / 读上下文 / 造引用”（useState / useRef / useContext）→ 各自独立签名，没有依赖数组：
+//      useState(初值)      useRef(初值)      useReducer(reducer, 初值)      useContext(Ctx)
+//    注意：useState(() => x) 里的函数只在第一渲染跑一次（惰性初始化），不是按 deps 重跑，别和 useMemo 混了。
+// 准确说法：“回调 + 依赖数组”是 effect / 派生类 hook 的通用形态，而非所有 hook 的形态。
+
+// 一、和 useMemo/useCallback 同形（都是 () => {}, [deps]）的还有 3 个
+// 1. useEffect —— 最重要的"兄弟" 和 useMemo 只差在用途：useMemo 返回值参与渲染，useEffect 跑副作用（改标题、发请求、加事件监听），不返回值。
+
+// tsx
+// useEffect(() => {
+//   document.title = `计数：${n}`;
+// }, [n]); // n 变才重跑；[] 只跑一次；不写 deps 每次都跑
+// （你 ① 里自动聚焦那段 useEffect(() => inputRef.current?.focus(), []) 就是它，只是当时没单独练。）
+
+// 2. useLayoutEffect —— 和 useEffect 一模一样，只差"时机" 在浏览器绘制之前同步跑，适合读 DOM 尺寸 / 避免闪烁。日常几乎用不到，能用 useEffect 就别用它。
+
+// tsx
+// useLayoutEffect(() => { /* 读 DOM 布局 */ }, [deps]);
+// 3. useImperativeHandle —— 同样 () => {}, [deps]，但第一个参数是 ref 让子组件通过 ref 向父暴露方法（反向操作 DOM）。这是"同形家族"里最容易被忽略的一个。
+
+// tsx
+// useImperativeHandle(ref, () => ({
+//   focus: () => inputRef.current?.focus(),
+// }), []); // 第三个参数还是依赖数组
+// 二、其他常用、但"签名不同"的 hook（useState/useRef/useContext 你已会）
+// Hook	干啥	签名
+// useReducer	复杂 state 逻辑（Redux 迷你版）	useReducer(reducer, init)
+// useId	SSR 安全的唯一 id	useId()
+// useTransition	标记"非紧急更新"，UI 不卡	const [p, s] = useTransition()
+// useDeferredValue	把一个值"延后"更新	const v = useDeferredValue(val)
+// useSyncExternalStore	订阅外部 store（Zustand/Redux 底层）	useSyncExternalStore(sub, get)
+// 三、对照记忆
+// 你刚确立的"签名速记"正好框住全部：
+
+// 同形族（()=>{},[deps]）：useEffect / useLayoutEffect / useMemo / useCallback / useImperativeHandle —— 区别只在"返回什么 / 干嘛用"。
+// 异形族：useState(初值) / useRef(初值) / useReducer / useContext(Ctx) / useId 等，没有依赖数组。
+// ------------------------------------------------------------
+
 import {
   createContext,
   memo,
@@ -69,25 +113,40 @@ const UseMemoDemo = () => {
     Array.from({ length: 1000 }, (_, i) => ({ id: i, name: `用户${i}` }))
   );
   const [query, setQuery] = useState("");
+  const [count, setCount] = useState(0); // 👉 故意加一个“与过滤无关”的 state
 
-  // 👉 const filtered = useMemo(() => list.filter(u => u.name.includes(query)), [list, query])
-  // 对比：不加 useMemo，每次渲染都重跑 filter；加了只在 list/query 变时算。
-  // const filtered = list; // 👉 替换成上面的 useMemo 结果
-  const filtered = useMemo(
-    () => list.filter((u) => u.name.includes(query)),
-    [list, query]
-  );
+  // 👉 用 useMemo 缓存 filter 结果：仅当 list/query 变化时重算，点“无关按钮”改 count 不会重算
+
+  // const filtered = list.filter((u) => u.name.includes(query));
+  // useMemo 的价值只有在"组件重渲染了、但依赖没变"时才显现。
+  const filtered = useMemo(() => {
+    console.log("② filter 重算了（仅 list/query 变化时，点无关按钮不会跑）");
+    return list.filter((u) => u.name.includes(query));
+  }, [list, query]);
+  // const filterClick = useCallback(() => {
+  //   console.log("filterClick 重算了");
+  //   return list.filter((u) => u.name.includes(query));
+  // }, [list, query]); // 返回函数，必须调用才能拿到值
+  // 跑起来后点"无关按钮 count" → Console 照样打印 "filterClick 重算了"，这就用反例坐实了：useCallback 缓存的是函数引用，不是计算结果；缓存【值】得用 useMemo。
+  // const filtered = filterClick(); // 👉 必须调用，每次渲染都重算
   return (
     <section className="rounded border p-3">
-      <h2 className="font-bold">② useMemo（缓存过滤结果）</h2>
+      <h2 className="font-bold">② useMemo 缓存版（用了 useMemo）</h2>
       <input
         className="mr-2 rounded border px-2 py-1"
         placeholder="搜索用户名"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
+      <button
+        className="ml-2 rounded border px-2 py-1"
+        onClick={() => setCount((c) => c + 1)}
+      >
+        无关按钮 count: {count}
+      </button>
       <p className="text-sm">
-        匹配 {filtered.length} 条（在 Console 看渲染次数体会差异）
+        匹配 {filtered.length} 条（打开 Console，点“无关按钮”看 filter
+        是否还在跑—— 用 useMemo 时它不会跑）
       </p>
       <ul className="max-h-32 overflow-auto text-sm">
         {filtered.slice(0, 20).map((u) => (
@@ -101,6 +160,8 @@ const UseMemoDemo = () => {
 // ============================================================
 // 练习 3：useCallback + memo —— 稳定“函数引用”
 // 要点：子组件被 memo 包裹时，传进去的函数若每次都是新引用，memo 就失效。
+// 对照 ② useMemo：两者签名完全一样 (() => X, [deps])，唯一区别——
+//    useMemo 返回【算出来的“值”】，useCallback 返回【“函数”本身】。
 // ============================================================
 const MemoChild = memo(function MemoChild({
   onClick,
@@ -128,6 +189,10 @@ const UseCallbackDemo = () => {
   // 若直接写 () => setN(x=>x+1)，每次渲染都是新函数，memo 白费。
   // const handle = () => setN((x) => x + 1); // 👉 替换成上面 useCallback 版本
   const handle = useCallback(() => setN((x) => x + 1), []);
+
+  // 👉 与 ② useMemo 对照：签名一模一样 (() => X, [deps])，唯一区别是返回的东西
+  const doubled = useMemo(() => n * 2, [n]); // 返回【值】
+  const add = useCallback((x: number) => n + x, [n]); // 返回【函数】
   return (
     <section className="rounded border p-3">
       <h2 className="font-bold">③ useCallback + memo（稳定函数引用）</h2>
@@ -135,6 +200,12 @@ const UseCallbackDemo = () => {
       <span className="ml-2">
         计数：{n}（打开 Console 看 MemoChild 是否重渲染）
       </span>
+      {/* 👉 对照 ②：useMemo 给“值”，useCallback 给“函数”，依赖写法完全一样 */}
+      <p className="mt-2 text-sm text-gray-600">
+        n={n} ｜ useMemo 算的值 doubled={doubled} ｜ useCallback 给的函数
+        add(10)=
+        {add(10)}
+      </p>
     </section>
   );
 };
