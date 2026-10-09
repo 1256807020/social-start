@@ -20,16 +20,21 @@ pnpm dev          # 访问 http://localhost:4000/admin/users
 | 文件 | 作用 |
 |---|---|
 | `app/admin/users/schema.ts` | zod 校验 schema + 推导类型 |
-| `app/admin/users/page.tsx` | RHF 表单 CRUD（主角） |
+| `app/admin/users/page.tsx` | RHF 表单 CRUD（主角，已连真实后端） |
 | `components/admin/admin-shell.tsx` | 复用 Tailwind 外壳（非重点） |
-| `lib/users-store.ts` | 内存假库 |
+| `lib/users-api.ts` | **真实后端客户端**：fetch /api/users（GET/POST/PUT/DELETE） |
+| `lib/users-store.ts` | 内存假库（仅留作「同步改内存」vs「异步 fetch」对照，页面已不 import） |
 
 ## 对比
 - `admin-antd/shadcn/mantine/mui` 四个分支的表单都是“朴素受控 + alert 校验”，这里升级成工业级 RHF + zod。
 - 实际项目里：四个 UI 库的表单**都应该**套 RHF + zod，本分支就是那个“标准写法模板”。
 
+## 数据落哪
+- 本分支已接入仓库通用 JSON 引擎：用户数据落在 `data/users.json`（首次写入自动创建）。
+- 刷新页面数据不丢——从「玩具假库」升级到「真·服务端 CRUD」。
+
 ## 练习 TODO
 1. [ ] 加字段：手机号（`z.string().regex(/^1\d{10}$/, '手机号格式')`）。
-2. [ ] 接真实接口：onSubmit 里 `await fetch('/api/users', { method: editing ? 'PUT' : 'POST', body: JSON.stringify(values) })`，并用 `useMutation`（见 `learn/react-query`）管理。
-3. [ ] 加 `mode: 'onBlur'` 让校验在失焦时就触发（默认是提交时才校验）。
+2. [x] 接真实接口：已用 `lib/users-api.ts` 的 `listUsers/createUser/updateUser/deleteUser` 异步 fetch `/api/users`（POST 新增、PUT 全量改、DELETE 删除）；用 `useMutation` 管理可再升级（见 `learn/react-query`）。
+3. [x] 已加 `mode: 'onBlur'`（失焦即校验，默认提交才校验）。
 4. [ ] 用 shadcn 的 `Form`/`Input` 组件替换裸 `<input>`，但 register 用法不变。
