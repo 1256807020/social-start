@@ -93,7 +93,7 @@ export default function ReducerPage() {
       style={{ maxWidth: 720, margin: "40px auto", fontFamily: "system-ui" }}
     >
       <h1>useReducer · 购物车</h1>
-
+      {/* dispatch 不是异步——它是同步提交（≈ Vuex commit），不能 await；异步在 useEffect/async 函数里 fetch，数据到手后才 dispatch。dispatch 一出现 = 异步 这个判断要反过来记 */}
       <button
         onClick={() =>
           dispatch({
