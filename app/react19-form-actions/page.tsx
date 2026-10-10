@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（表单篇 · React 19）· 表单 Actions 全家桶
+// · Vue2 对照：表单靠 v-model 双向绑定 + methods 里手动 axios 提交，无内置 action 概念；
+// · Vue3 对照：&lt;script setup&gt; 里 ref 绑 v-model，submit 调 async 函数，pending/error 自己管；
+// · React 对照：React 19 的 &lt;form action={异步fn}&gt; + useActionState + useFormStatus 把「pending/error/重置」内建化（本例）。
+// 📌 实战定位：表单提交态管理【常规业务常用】；React 19 新 API 让非受控表单更简洁，旧项目仍可用 react-hook-form。
+// 🧭 学习模式：🔧固定写法=action 函数 / useActionState / useFormStatus；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { useActionState, useFormStatus } from 'react'
@@ -96,6 +104,27 @@ export default function React19FormActionsPage() {
         <h2>③ Actions API（form action 传函数）</h2>
         <AddTodoForm />
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th>
+              <th className="px-2 py-1">Vue2 (Options)</th>
+              <th className="px-2 py-1">Vue3 (Composition)</th>
+              <th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">提交入口</td><td className="px-2 py-1">@submit + methods</td><td className="px-2 py-1">@submit + async</td><td className="px-2 py-1">&lt;form action={fn}&gt;</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">pending 态</td><td className="px-2 py-1">this.loading</td><td className="px-2 py-1">ref(loading)</td><td className="px-2 py-1">useFormStatus / isPending</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">错误/结果</td><td className="px-2 py-1">手写</td><td className="px-2 py-1">ref(err)</td><td className="px-2 py-1">useActionState</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">收集字段</td><td className="px-2 py-1">v-model</td><td className="px-2 py-1">v-model</td><td className="px-2 py-1">FormData 自动收集</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：React19 把表单 pending/error/重置内建化；老项目用 react-hook-form 同样顺手。AddTodoForm 里已演示 action 调 /api/todo 新增。</p>
+      </details>
+
     </main>
   )
 }
