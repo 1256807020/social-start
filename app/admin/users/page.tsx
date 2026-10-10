@@ -1,12 +1,20 @@
 // ============================================================================
-// 用户管理页：MUI Table + Dialog 做 CRUD
+// 用户管理页：MUI Table + Dialog 做 CRUD（走【真实 JSON 后端】）
 // ----------------------------------------------------------------------------
-// 与 antd/shadcn/mantine 分支同一需求，组件换成 MUI：Table / Dialog / TextField。
-// 这里用受控 state 管理表单（未接校验），校验见 learn/rhf-zod-crud。
+// ⚠️ 实战定位：MUI 后台模板 = 常用（你 5-6 套生产系统基本都遇过）。
+//   本分支和 antd/shadcn/mantine 是「同一需求换 UI 库」，重点认领组件写法差异，不深讲。
+// 数据走真实接口（同 admin-antd，禁止假库/直读 json）：
+//   GET    /api/users          列表
+//   POST   /api/users          新增
+//   PATCH  /api/users/:id      改（增量合并）
+//   DELETE /api/users/:id      删
+//   统一响应体 { code:0, data, msg, total }，取 data。
+// 已学知识点点名：useState 受控表单 + Server/Client 边界('use client') + useEffect 拉数 + fetch CRUD 信封解包。
+// 校验见 learn/rhf-zod-crud；主题见 components/admin/mui-theme.tsx。
 // ============================================================================
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -21,11 +29,22 @@ import {
   TextField,
   MenuItem,
   Box,
+  Typography,
 } from '@mui/material';
-import { listUsers, createUser, updateUser, deleteUser, type User } from '../../../lib/users-store';
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'editor' | 'viewer';
+  status: 'active' | 'disabled';
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(() => listUsers());
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const [name, setName] = useState('');
@@ -33,9 +52,18 @@ export default function UsersPage() {
   const [role, setRole] = useState<User['role']>('viewer');
   const [status, setStatus] = useState<User['status']>('active');
 
-  function refresh() {
-    setUsers(listUsers());
+  // 查：服务端通用 CRUD 接口（真实 JSON 后端）
+  async function refresh() {
+    setLoading(true);
+    const r = await fetch('/api/users');
+    const j = await r.json();
+    setUsers(j.data ?? []);
+    setLoading(false);
   }
+  useEffect(() => {
+    refresh();
+  }, []);
+
   function openCreate() {
     setEditing(null);
     setName('');
@@ -52,15 +80,28 @@ export default function UsersPage() {
     setStatus(u.status);
     setOpen(true);
   }
-  function save() {
+  // 增 / 改：同一个 Dialog，靠 editing 区分
+  async function save() {
     const payload = { name, email, role, status };
-    if (editing) updateUser(editing.id, payload);
-    else createUser(payload);
+    if (editing) {
+      await fetch(`/api/users/${editing.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } else {
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    }
     setOpen(false);
     refresh();
   }
-  function remove(id: number) {
-    deleteUser(id);
+  // 删
+  async function remove(id: number) {
+    await fetch(`/api/users/${id}`, { method: 'DELETE' });
     refresh();
   }
 
@@ -71,6 +112,8 @@ export default function UsersPage() {
           新建用户
         </Button>
       </Box>
+
+      {loading && <Typography color="text.secondary">加载中…</Typography>}
 
       <Table>
         <TableHead>

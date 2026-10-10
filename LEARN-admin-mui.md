@@ -2,6 +2,9 @@
 
 > 从 `basic` 分支切出。MUI 是 Material Design 实现，大厂/海外常用。
 > 目标：**带注释的学习骨架**。
+>
+> ⚠️ **实战定位：MUI 后台模板 = 常用**（Material 规范统一、大厂熟悉，你 5-6 套生产系统基本都遇过）。本分支和 antd/shadcn/mantine 是「同一需求换 UI 库」，重点认领组件写法差异（Table/Dialog/TextField、ThemeProvider 暗色、Grid v6 `size` API），不深讲。
+> 数据已全部走【真实 JSON 后端】`/api/users`（GET/POST/PATCH/DELETE，统一信封 `{code,data,total}`），**禁止假库 `lib/users-store` / 直读 json**（框架铁律）。
 
 ## 跑起来
 ```bash
@@ -20,8 +23,8 @@ pnpm dev          # 访问 http://localhost:4000/admin
 | `components/admin/mui-theme.tsx` | ThemeProvider + AppBar + Drawer 布局（client） |
 | `app/admin/layout.tsx` | 后台根布局 |
 | `app/admin/page.tsx` | 仪表盘（Grid + Card） |
-| `app/admin/users/page.tsx` | 用户 CRUD（Table + Dialog） |
-| `lib/users-store.ts` | 内存假库 |
+| `app/admin/users/page.tsx` | 用户 CRUD（Table + Dialog，走 `/api/users` 真实接口） |
+| `lib/users-store.ts` | 内存假库（已弃用，数据改走 `/api/users`） |
 
 ## 注意点
 - MUI 依赖 `@emotion/react` + `@emotion/styled`（已在 package.json）。
@@ -32,7 +35,7 @@ pnpm dev          # 访问 http://localhost:4000/admin
 ## 练习 TODO
 1. [ ] 用 `useColorScheme` 改成官方推荐的 CSS 变量暗色方案。
 2. [ ] 给 Dialog 表单加 react-hook-form 校验。
-3. [ ] 接真实接口（`app/api/users`）。
+3. [x] 接真实接口（`app/api/users`）—— 已完成，仪表盘服务端 fetch、用户页客户端 fetch。
 4. [ ] 加 MUI 的 DataGrid 做带分页/排序的高级表格。
 
 ## 对比（四个后台模板）
