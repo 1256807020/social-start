@@ -30,9 +30,11 @@ export default async function DashboardPage() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h5">仪表盘</Typography>
-        <Button component={Link} href="/admin/users" variant="contained">
-          去用户管理
-        </Button>
+        {/* RSC 边界不能把 Link 函数当 component={Link} 传给 client 组件，
+            故用 <Link> 包住 <Button>（href 落到外层 <a>，点击即导航） */}
+        <Link href="/admin/users">
+          <Button variant="contained">去用户管理</Button>
+        </Link>
       </Box>
 
       {/* Grid v6+ 用 size={{ xs, md }} 控制每列占宽（替代旧版 item xs={4}） */}
