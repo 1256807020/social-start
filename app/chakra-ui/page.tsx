@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（UI 库篇）· Chakra UI（基于 emotion 的组件库）
+// · Vue2 对照：组件库思路同 element-ui / ant-design-vue ——「开箱即用组件 + 主题变量」；Chakra 的 props 风格 ≈ Vue 的组件 attr；
+// · Vue3 对照：同上，国内常用 element-plus；Chakra 在 React 侧定位类似「自带设计系统的组件库」；
+// · React 对照：ChakraProvider 包住全局，组件用 props 控制样式（colorScheme / as），本例 CRUD 走 /api/todo。
+// 📌 实战定位：组件库【了解即可·进阶】；你已熟 antd / mantle / shadcn，Chakra 作为「另一流派」认领即可，不必深练。
+// 🧭 学习模式：🔧固定写法=ChakraProvider 包裹 + 组件 props 控制；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 // 【Chakra UI 分支 · learn/chakra-ui】
@@ -122,6 +130,22 @@ export default function ChakraUiPage() {
     <ChakraProvider>
       <Box bg="gray.50" minH="100vh">
         <TodoApp />
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b"><th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 / Vue3</th><th className="px-2 py-1">React</th></tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">组件库流派</td><td className="px-2 py-1">element-ui / ant-design-vue / element-plus</td><td className="px-2 py-1">Chakra UI（本例）/ antd / shadcn</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">样式控制</td><td className="px-2 py-1">组件 attr + css</td><td className="px-2 py-1">组件 props（colorScheme / as）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">主题</td><td className="px-2 py-1">主题变量 / CSS 变量</td><td className="px-2 py-1">theme 对象 + extend</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">定位</td><td className="px-2 py-1">国内主流</td><td className="px-2 py-1">国际主流（emotion 体系）</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：同一后台需求不同 UI 库写法不同；本例 CRUD 全部走 /api/todo 真实接口。</p>
+      </details>
+
       </Box>
     </ChakraProvider>
   )
