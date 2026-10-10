@@ -1,3 +1,10 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（动画·滚动缩放篇）· GSAP ScrollScale + 横向滚动 + 视差
+// · Vue2/Vue3 对照：ScrollTrigger 框架无关，Vue 里 onMounted 注册、Lenis 滚动接 ScrollTrigger.update；
+// · React 对照：本例 pin + scrub 做缩放 / 横向滚动 / 多层视差，useEffect 清理 revert+destroy。
+// 📌 实战定位：滚动缩放 / 横向滚动【了解即可·进阶】；产品展示站常见。
+// 🧭 学习模式：🔧固定写法=scrollTrigger {pin,scrub} + Lenis 同步；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { useEffect, useRef } from 'react'
@@ -82,6 +89,22 @@ export default function ScrollScalePage() {
         <div className="layer-back" style={{ position: 'absolute', inset: 0, background: '#fc6', opacity: 0.5 }} />
         <div className="layer-front" style={{ position: 'absolute', inset: '30%', background: '#f6c', opacity: 0.7 }} />
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b"><th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 / Vue3</th><th className="px-2 py-1">React</th></tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">滚动缩放</td><td className="px-2 py-1">ScrollTrigger（框架无关）</td><td className="px-2 py-1">ScrollTrigger（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">横向滚动</td><td className="px-2 py-1">pin + x 位移</td><td className="px-2 py-1">pin + x 位移</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">与 Lenis 同步</td><td className="px-2 py-1">lenis.on('scroll', update)</td><td className="px-2 py-1">同左</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">清理</td><td className="px-2 py-1">onUnmounted revert</td><td className="px-2 py-1">useEffect 清理 revert+destroy</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：滚动缩放 / 横滚框架无关，关键是 pin+scrub + Lenis 同步 + 卸载清理。</p>
+      </details>
+
     </main>
   )
 }
