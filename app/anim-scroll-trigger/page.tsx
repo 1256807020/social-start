@@ -1,3 +1,10 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（动画·滚动驱动篇）· GSAP ScrollTrigger + Lenis
+// · Vue2/Vue3 对照：ScrollTrigger 框架无关，Vue 里同样 onMounted 注册、Lenis 滚动事件 update ScrollTrigger；
+// · React 对照：useRef+useEffect 注册插件、Lenis.raf 驱动、卸载 ctx.revert()+lenis.destroy()（本例）。
+// 📌 实战定位：滚动驱动动画【了解即可·进阶】；做「进入视口淡入 / 钉住 / 视差」必备，官网 / 营销页常见。
+// 🧭 学习模式：🔧固定写法=ScrollTrigger.update 接 Lenis 滚动 + gsap.ticker 统一 raf；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { useEffect, useRef } from 'react'
@@ -93,6 +100,22 @@ export default function ScrollTriggerPage() {
         />
         <h2 style={{ position: 'relative', padding: 40 }}>③ 视差层</h2>
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b"><th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 / Vue3</th><th className="px-2 py-1">React</th></tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">滚动驱动</td><td className="px-2 py-1">ScrollTrigger（框架无关）</td><td className="px-2 py-1">ScrollTrigger（框架无关，本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">与 Lenis 同步</td><td className="px-2 py-1">lenis.on('scroll', ScrollTrigger.update)</td><td className="px-2 py-1">同左</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">能力</td><td className="px-2 py-1">进入视口 / 钉住 / scrub / 视差</td><td className="px-2 py-1">同左</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">清理</td><td className="px-2 py-1">onUnmounted revert+destroy</td><td className="px-2 py-1">useEffect 清理 revert+destroy</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：ScrollTrigger 框架无关；关键是把 Lenis 滚动接到 ScrollTrigger.update，并用 gsap.ticker 统一 raf。</p>
+      </details>
+
     </main>
   )
 }
