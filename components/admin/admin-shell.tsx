@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { ConfigProvider, Layout, Menu, Switch, theme as antdTheme, Typography } from 'antd';
+import { App, ConfigProvider, Layout, Menu, Switch, theme as antdTheme, Typography } from 'antd';
 import Link from 'next/link';
 
 const { Sider, Header, Content } = Layout;
@@ -21,7 +21,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   return (
     // ConfigProvider 是 antd 的主题开关：algorithm 决定亮/暗算法。
     <ConfigProvider theme={{ algorithm: dark ? darkAlgorithm : defaultAlgorithm }}>
-      <Layout style={{ minHeight: '100vh' }}>
+      {/* App 包裹：让 message/notification/modal 能消费 ConfigProvider 的动态主题（antd v6 推荐，避免静态 message 告警） */}
+      <App>
+        <Layout style={{ minHeight: '100vh' }}>
         {/* 侧边栏：真实后台会做“可折叠 + 多级菜单 + 选中高亮” */}
         <Sider breakpoint="lg" collapsible>
           <div style={{ color: '#fff', padding: 16, fontWeight: 600 }}>My Admin</div>
@@ -56,6 +58,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </Content>
         </Layout>
       </Layout>
+      </App>
     </ConfigProvider>
   );
 }

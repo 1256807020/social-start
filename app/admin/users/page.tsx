@@ -3,11 +3,22 @@
 // ----------------------------------------------------------------------------
 // 这是后台最高频的页面形态：列表展示 + 新建/编辑（同一弹窗）+ 删除。
 // 标了 'use client'，因为用了 useState / Form 等交互。
+//
+// 数据走【真实 JSON 后端】（和 /todo-client 同一套，不再用内存假库）：
+//   集合文件：data/users.json
+//   通用 CRUD：app/api/[resource]
+//     GET    /api/users          列表（分页 / 过滤 / 排序 / 关键字）
+//     POST   /api/users          新增
+//     PATCH  /api/users/:id      改（增量合并）
+//     DELETE /api/users/:id      删
+//   统一响应体：{ code:0, data, msg, total, page, pageSize }，code!==0 即失败。
+//   数据落在 json 文件，刷新页面不丢 —— 这才是真实项目里的前后端分离写法。
 // ============================================================================
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  App,
   Table,
   Button,
   Modal,
@@ -16,26 +27,45 @@ import {
   Select,
   Space,
   Popconfirm,
-  message,
 } from 'antd';
-import {
-  listUsers,
-  createUser,
-  updateUser,
-  deleteUser,
-  type User,
-} from '../../../lib/users-store';
+
+// 实体类型：对应 data/users.json 字段（只取前端用到的，不依赖假库）
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'editor' | 'viewer';
+  status: 'active' | 'disabled';
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 export default function UsersPage() {
-  // 用本地 state 镜像“假库”；每次增删改后 refresh() 重新拉一遍
-  const [users, setUsers] = useState<User[]>(() => listUsers());
+  // 本地 state 镜像接口返回；每次增删改后 refresh() 重新拉一遍（走真实接口）
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null); // null = 新建，否则 = 编辑
   const [form] = Form.useForm();
+  // 用 App.useApp() 取“带主题上下文”的 message（antd v6 推荐，避免静态 message 告警）
+  const { message } = App.useApp();
 
-  function refresh() {
-    setUsers(listUsers());
+  // 查：打真实接口。pageSize 拉大一点，本示例不分页（演示用）
+  async function refresh() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/users?pageSize=1000');
+      const json = await res.json();
+      setUsers(json.data ?? []);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  // 首屏拉一次
+  useEffect(() => {
+    refresh();
+  }, []);
 
   function handleOpenCreate() {
     setEditing(null);
@@ -45,25 +75,36 @@ export default function UsersPage() {
 
   function handleOpenEdit(u: User) {
     setEditing(u);
-    form.setFieldsValue(u); // 把行数据灌进表单
+    form.setFieldsValue(u); // 把行数据灌进表单（id/时间字段虽无 Form.Item，但不影响提交）
     setOpen(true);
   }
 
   async function handleOk() {
-    const values = await form.validateFields(); // 触发表单校验
+    const values = await form.validateFields(); // 触发表单校验，只回传已注册的字段
     if (editing) {
-      updateUser(editing.id, values);
+      // 改：PATCH /api/users/:id，增量合并（只传被改的字段）
+      await fetch(`/api/users/${editing.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
       message.success('已更新');
     } else {
-      createUser(values);
+      // 增：POST /api/users，后端自动补 id / createdAt / updatedAt
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
       message.success('已创建');
     }
     setOpen(false);
     refresh();
   }
 
-  function handleDelete(id: number) {
-    deleteUser(id);
+  async function handleDelete(id: number) {
+    // 删：DELETE /api/users/:id
+    await fetch(`/api/users/${id}`, { method: 'DELETE' });
     message.success('已删除');
     refresh();
   }
@@ -97,7 +138,7 @@ export default function UsersPage() {
         </Button>
       </Space>
 
-      <Table rowKey="id" dataSource={users} columns={columns} pagination={false} />
+      <Table rowKey="id" dataSource={users} columns={columns} loading={loading} pagination={false} />
 
       <Modal
         title={editing ? '编辑用户' : '新建用户'}
