@@ -1,3 +1,10 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（动画·整合篇）· Agency 落地页样板
+// · Vue2/Vue3 对照：整页叙事（Lenis + GSAP）框架无关，Vue 项目同样可搭，思路完全一致；
+// · React 对照：本例把 Hero 逐行揭示 + pin 横向作品集 + 视差尾屏串成一条叙事，useEffect 统一清理。
+// 📌 实战定位：整页动画整合【了解即可·进阶】；接“出海建站单”的样板间，认领即可。
+// 🧭 学习模式：🔧固定写法=前面所有 anim-* 技术的组合 + 统一 ctx.revert()；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { useEffect, useRef } from 'react'
@@ -89,6 +96,22 @@ export default function ShowcasePage() {
         <div className="footer-bg" style={{ position: 'absolute', inset: '-20% 0', background: 'linear-gradient(135deg,#f60,#60f)' }} />
         <h2 style={{ position: 'relative' }}>Let’s talk →</h2>
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b"><th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 / Vue3</th><th className="px-2 py-1">React</th></tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">整页叙事</td><td className="px-2 py-1">Lenis + GSAP 同思路</td><td className="px-2 py-1">Lenis + GSAP（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">技术组合</td><td className="px-2 py-1">揭示 + pin + 视差</td><td className="px-2 py-1">同左</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">框架</td><td className="px-2 py-1">GSAP 框架无关</td><td className="px-2 py-1">GSAP 框架无关</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">用途</td><td className="px-2 py-1">营销 / 作品集站</td><td className="px-2 py-1">营销 / 作品集站</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：整页动画框架无关，React/Vue 思路一致；整合前面所有 anim 技术即成一个落地页。</p>
+      </details>
+
     </main>
   )
 }
