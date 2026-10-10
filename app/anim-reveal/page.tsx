@@ -1,3 +1,10 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（动画·揭示篇）· GSAP 逐行揭示 / clip-path
+// · Vue2/Vue3 对照：揭示动画在 Vue 里用 &lt;transition&gt; JS 钩子 + GSAP/Lenis 同样能做（框架无关）；纯 Vue 可用 overflow:hidden + translateY 过渡；
+// · React 对照：本例用 GSAP + ScrollTrigger 做逐行 yPercent 揭示、clip-path 图片揭示，useEffect 里 context 清理。
+// 📌 实战定位：滚动揭示【了解即可·进阶】；获奖站“高级感”常用，营销 / 作品集页高频。
+// 🧭 学习模式：🔧固定写法=overflow:hidden 包裹 + ScrollTrigger 触发；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { useEffect, useRef } from 'react'
@@ -65,6 +72,22 @@ export default function RevealPage() {
       />
 
       {/* 👉 进阶：mask-image 渐变揭示、SVG 路径描边揭示(stroke-dashoffset)、图片 scale+clip 组合 */}
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b"><th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 / Vue3</th><th className="px-2 py-1">React</th></tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">揭示手法</td><td className="px-2 py-1">overflow:hidden + translateY 过渡</td><td className="px-2 py-1">line-mask + ScrollTrigger</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">触发</td><td className="px-2 py-1">transition JS 钩子</td><td className="px-2 py-1">scrollTrigger 进视口</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">图片揭示</td><td className="px-2 py-1">clip-path + GSAP</td><td className="px-2 py-1">clip-path + GSAP（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">框架</td><td className="px-2 py-1">GSAP 可选</td><td className="px-2 py-1">GSAP 框架无关</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：揭示 = 溢出遮挡 + 位移；Vue 用 transition 钩子或 GSAP，React 本例用 GSAP + ScrollTrigger。</p>
+      </details>
+
     </main>
   )
 }
