@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（异步 UI 篇 · React 19）· useOptimistic & use()
+// · Vue2 对照：乐观更新靠先 push 到 data 再 axios，失败在 catch 里 splice 回滚（手写）；
+// · Vue3 对照：同 Vue2（ref 先改再请求，失败回滚），无内建 useOptimistic；
+// · React 对照：useOptimistic 自动乐观插入、失败回滚；use() 直接在组件读 Promise（配 Suspense）。
+// 📌 实战定位：乐观更新/异步读取【了解即可·进阶】，React 19 新特性；旧版用 SWR/React Query 的 optimistic 能力。
+// 🧭 学习模式：🔧固定写法=useOptimistic(addOptimistic) / use(promise)；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { useOptimistic, use, Suspense, useState } from 'react'
@@ -77,6 +85,27 @@ export default function React19AsyncUiPage() {
         <h2>② use() 读 Promise</h2>
         <UserSection />
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th>
+              <th className="px-2 py-1">Vue2</th>
+              <th className="px-2 py-1">Vue3</th>
+              <th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">乐观更新</td><td className="px-2 py-1">data 先 push</td><td className="px-2 py-1">ref 先改</td><td className="px-2 py-1">useOptimistic（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">读 Promise</td><td className="px-2 py-1">无</td><td className="px-2 py-1">无</td><td className="px-2 py-1">use() + Suspense</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">失败回滚</td><td className="px-2 py-1">catch 里 splice</td><td className="px-2 py-1">catch 里回滚</td><td className="px-2 py-1">useOptimistic 自动回滚</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">依赖</td><td className="px-2 py-1">手写</td><td className="px-2 py-1">手写</td><td className="px-2 py-1">Suspense + ErrorBoundary</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：React19 把乐观更新/异步读取内建；Vue 靠手写 ref + catch 回滚实现同类效果。</p>
+      </details>
+
     </main>
   )
 }
