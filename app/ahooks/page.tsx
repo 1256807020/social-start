@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（请求管理篇）· ahooks useRequest
+// · Vue2 对照：常用 axios + data() 手写 loading/error，或 vue-request（ahooks 的 Vue 版）；
+// · Vue3 对照：vue-request 的 useRequest 几乎同 API；或自己封装 useAsyncState composable；
+// · React 对照：ahooks useRequest 统一管理「请求/loading/手动触发/刷新」，本例用它包 /api/todo 的增删改查。
+// 📌 实战定位：请求状态管理【常规业务常用】；ahooks 是国内 React 项目高频库，vue-request 是 Vue 平替。
+// 🧭 学习模式：🔧固定写法=useRequest(fn,{manual,onSuccess})；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 // 【ahooks 分支 · learn/ahooks】
@@ -161,6 +169,27 @@ export default function AhooksPage() {
           下一页
         </button>
       </div>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th>
+              <th className="px-2 py-1">Vue2</th>
+              <th className="px-2 py-1">Vue3</th>
+              <th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">请求封装</td><td className="px-2 py-1">手写 axios + data</td><td className="px-2 py-1">vue-request / 自封装</td><td className="px-2 py-1">ahooks useRequest（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">loading 态</td><td className="px-2 py-1">this.loading</td><td className="px-2 py-1">ref(loading)</td><td className="px-2 py-1">自带 .loading</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">手动触发</td><td className="px-2 py-1">methods 调</td><td className="px-2 py-1">调 run</td><td className="px-2 py-1">run()</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">Vue 平替</td><td className="px-2 py-1">vue-request</td><td className="px-2 py-1">vue-request</td><td className="px-2 py-1">ahooks</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：useRequest 把 loading/刷新/成功回调一体化；本例 CRUD 全部走 /api/todo 真实接口，无需手写 useEffect+fetch。</p>
+      </details>
+
     </main>
   )
 }
