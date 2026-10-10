@@ -1,25 +1,35 @@
 // ============================================================================
-// 用户管理页：Mantine Table + Modal 做 CRUD
+// 用户管理页：Mantine Table + Modal 做 CRUD（走【真实 JSON 后端】）
 // ----------------------------------------------------------------------------
-// 和 antd/shadcn 分支结构一致，只是把组件换成 Mantine 的 Table / Modal / TextInput / Select。
-// 注意 Mantine 的表单这里用“受控 state”逐字段管理，没接校验库；
-// 想做校验看 learn/rhf-zod-crud（react-hook-form + zod）。
+// ⚠️ 实战定位：Mantine 后台模板 = 常用（布局开箱即用、开发最快，你生产系统基本都遇过）。
+//   本分支和 antd/shadcn/mui 是「同一需求换 UI 库」，重点认领组件写法差异，不深讲。
+// 数据走真实接口（同 admin-antd/admin-mui，禁止假库/直读 json）：
+//   GET    /api/users          列表
+//   POST   /api/users          新增
+//   PATCH  /api/users/:id      改（增量合并）
+//   DELETE /api/users/:id      删
+//   统一响应体 { code:0, data, msg, total }，取 data。
+// 已学知识点点名：useState 受控表单 + Server/Client 边界('use client') + useEffect 拉数 + fetch CRUD 信封解包。
+// 校验见 learn/rhf-zod-crud（react-hook-form + zod）；暗色/布局见 components/admin/mantine-provider.tsx。
 // ============================================================================
 'use client';
 
-import { useState } from 'react';
-import {
-  Table,
-  Button,
-  Modal,
-  TextInput,
-  Select,
-  Group,
-} from '@mantine/core';
-import { listUsers, createUser, updateUser, deleteUser, type User } from '../../../lib/users-store';
+import { useEffect, useState } from 'react';
+import { Table, Button, Modal, TextInput, Select, Group, Text } from '@mantine/core';
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'editor' | 'viewer';
+  status: 'active' | 'disabled';
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(() => listUsers());
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
   const [opened, setOpened] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const [name, setName] = useState('');
@@ -27,9 +37,18 @@ export default function UsersPage() {
   const [role, setRole] = useState<string | null>('viewer');
   const [status, setStatus] = useState<string | null>('active');
 
-  function refresh() {
-    setUsers(listUsers());
+  // 查：服务端通用 CRUD 接口（真实 JSON 后端）
+  async function refresh() {
+    setLoading(true);
+    const r = await fetch('/api/users');
+    const j = await r.json();
+    setUsers(j.data ?? []);
+    setLoading(false);
   }
+  useEffect(() => {
+    refresh();
+  }, []);
+
   function openCreate() {
     setEditing(null);
     setName('');
@@ -46,20 +65,33 @@ export default function UsersPage() {
     setStatus(u.status);
     setOpened(true);
   }
-  function save() {
+  // 增 / 改：同一个 Modal，靠 editing 区分
+  async function save() {
     const payload = {
       name,
       email,
       role: (role ?? 'viewer') as User['role'],
       status: (status ?? 'active') as User['status'],
     };
-    if (editing) updateUser(editing.id, payload);
-    else createUser(payload);
+    if (editing) {
+      await fetch(`/api/users/${editing.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } else {
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    }
     setOpened(false);
     refresh();
   }
-  function remove(id: number) {
-    deleteUser(id);
+  // 删
+  async function remove(id: number) {
+    await fetch(`/api/users/${id}`, { method: 'DELETE' });
     refresh();
   }
 
@@ -68,6 +100,8 @@ export default function UsersPage() {
       <Group justify="flex-end" mb="md">
         <Button onClick={openCreate}>新建用户</Button>
       </Group>
+
+      {loading && <Text c="dimmed">加载中…</Text>}
 
       <Table striped withTableBorder>
         <Table.Thead>
