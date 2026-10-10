@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（性能篇）· 三板斧
+// · Vue2/Vue3 对照：代码分割用 defineAsyncComponent(() => import())；虚拟列表用 vue-virtual-scroller；
+//   防抖用 lodash.debounce 或自定义 composable（ref + watch + setTimeout）；
+// · React 对照：React.lazy + Suspense、自写虚拟列表（只渲可视区）、useDebounce 自定义 Hook（本例）。
+// 📌 实战定位：性能优化【常规业务常用】；列表万级必上虚拟列表，搜索框必防抖，重组件必懒加载。
+// 🧭 学习模式：🔧固定写法=lazy+Suspense / 虚拟列表算 start-end / useDebounce；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { lazy, Suspense, useState } from 'react'
@@ -89,6 +97,22 @@ export default function PerfPage() {
         <h2>③ 防抖（useDebounce）</h2>
         <Search />
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b"><th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 / Vue3</th><th className="px-2 py-1">React</th></tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">代码分割</td><td className="px-2 py-1">defineAsyncComponent</td><td className="px-2 py-1">React.lazy + Suspense（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">虚拟列表</td><td className="px-2 py-1">vue-virtual-scroller</td><td className="px-2 py-1">自写可视区（start/end）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">防抖</td><td className="px-2 py-1">lodash.debounce / composable</td><td className="px-2 py-1">useDebounce Hook</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">触发场景</td><td className="px-2 py-1">万级列表 / 搜索框</td><td className="px-2 py-1">同左</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：三板斧 React/Vue 一一对应；万级列表必虚拟、搜索必防抖、重组件必懒加载。</p>
+      </details>
+
     </main>
   )
 }
