@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（图表篇）· 原生 ECharts 接入 React 19
+// · Vue2 对照：vue-echarts 封装组件，或 mounted 里 echarts.init(this.$refs.x)；
+// · Vue3 对照：onMounted 里 echarts.init(ref.value)，watch(option) 调 setOption，onUnmounted dispose；
+// · React 对照：useRef 拿 DOM + useEffect 里 echarts.init，option 变就 setOption，卸载 dispose（本例写法）。
+// 📌 实战定位：数据可视化【常规业务常用】，echarts 是国内主流；React 侧推荐直接用原生（避开 echarts-for-react 在 React19 的兼容坑）。
+// 🧭 学习模式：🔧固定写法=Chart 容器组件（init/setOption/resize/dispose）；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 // 【ECharts 数据可视化分支 · learn/echarts】
@@ -214,6 +222,27 @@ export default function EchartsPage() {
       </div>
 
       <p className="text-xs text-gray-400">提示：想看全量统计可把 loadAll() 的结果喂给 Chart，这里用当前页演示更轻量。</p>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th>
+              <th className="px-2 py-1">Vue2 (Options)</th>
+              <th className="px-2 py-1">Vue3 (Composition)</th>
+              <th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">接入方式</td><td className="px-2 py-1">vue-echarts / mounted init</td><td className="px-2 py-1">onMounted init</td><td className="px-2 py-1">useRef+useEffect init（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">生命周期</td><td className="px-2 py-1">mounted~beforeDestroy</td><td className="px-2 py-1">onMounted~onUnmounted</td><td className="px-2 py-1">useEffect 初始化/卸载 dispose</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">数据更新</td><td className="px-2 py-1">watch option</td><td className="px-2 py-1">watch(option)</td><td className="px-2 py-1">setOption(option)</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">React19 注意</td><td className="px-2 py-1">—</td><td className="px-2 py-1">—</td><td className="px-2 py-1">避开 echarts-for-react 兼容坑，用原生</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：原生 echarts 用 ref+useEffect 最稳，option 变化 setOption；图表数据来自 /api/todo，随当前页增删改实时刷新。</p>
+      </details>
+
     </main>
   )
 }
