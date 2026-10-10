@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（表格篇）· @tanstack/react-table（headless 表格内核）
+// · Vue2 对照：多用 element-ui <el-table> 或手写 <table>+v-for，列在 template 写死，UI 与逻辑耦合；
+// · Vue3 对照：element-plus <el-table-column>，思路同 Vue2；社区 headless 思路非主流；
+// · React 对照：@tanstack/react-table 只管「列模型+行模型」，不渲染 UI，<table> 自己写（灵活、可接任意 UI）。
+// 📌 实战定位：后台「表格」属【常规业务常用】；需高度自定义列/单元格时，headless 表格是首选。
+// 🧭 学习模式：🔧固定写法=createColumnHelper+useReactTable+flexRender；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 // 【TanStack Table 分支 · learn/tanstack-table】
@@ -157,6 +165,27 @@ export default function TanStackTablePage() {
         <span>{page} / {totalPages}（共 {total}）</span>
         <button className="px-2 py-1 border rounded disabled:opacity-40" disabled={page >= totalPages} onClick={() => load(page + 1)}>下一页</button>
       </div>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th>
+              <th className="px-2 py-1">Vue2 (Options)</th>
+              <th className="px-2 py-1">Vue3 (Composition)</th>
+              <th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">表格方案</td><td className="px-2 py-1">el-table / 手写 table</td><td className="px-2 py-1">element-plus</td><td className="px-2 py-1">@tanstack/react-table（headless）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">列定义</td><td className="px-2 py-1">template 写死</td><td className="px-2 py-1">el-table-column</td><td className="px-2 py-1">createColumnHelper 声明式</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">自定义单元格</td><td className="px-2 py-1">slot</td><td className="px-2 py-1">#default slot</td><td className="px-2 py-1">cell 渲染函数</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">分页/排序</td><td className="px-2 py-1">组件内置</td><td className="px-2 py-1">组件内置</td><td className="px-2 py-1">自己接（本例走 /api/todo 分页）</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：TanStack Table 不绑 UI、自己渲染 &lt;table&gt;，适合要完全掌控表格样式的场景；分页/排序数据走我们 /api/todo 真实接口，列表增删改查已接好。</p>
+      </details>
+
     </main>
   )
 }
