@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（模式篇）· 高级组件模式
+// · Vue2 对照：ErrorBoundary 无（靠 errorCaptured 钩子）；Portal 用 &lt;teleport&gt;（Vue3 才有）；ref 用 this.$refs；HOC/RenderProps 思路类似；
+// · Vue3 对照：&lt;Teleport&gt; 原生支持；ref 用 ref()+defineExpose；ErrorBoundary 仍需第三方（无内置）；
+// · React 对照：ErrorBoundary 必须 class；createPortal 原生；forwardRef+useImperativeHandle；HOC/RenderProps 函数式（本例）。
+// 📌 实战定位：这些模式【了解即可·进阶】，日常写业务不常用，但读源码/封装库必遇。
+// 🧭 学习模式：🔧固定写法=各模式骨架；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import {
@@ -114,6 +122,26 @@ export default function PatternsPage() {
         <h2>RenderProps</h2>
         <MouseTracker render={(p) => <p>鼠标：{p.x}, {p.y}</p>} />
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">模式</th>
+              <th className="px-2 py-1">Vue2 / Vue3</th>
+              <th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">错误边界</td><td className="px-2 py-1">errorCaptured / 第三方</td><td className="px-2 py-1">class ErrorBoundary（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">传送 DOM</td><td className="px-2 py-1">&lt;Teleport&gt;</td><td className="px-2 py-1">createPortal（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">跨层 ref</td><td className="px-2 py-1">this.$refs / defineExpose</td><td className="px-2 py-1">forwardRef+useImperativeHandle（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">复用</td><td className="px-2 py-1">mixins / composable / HOC</td><td className="px-2 py-1">HOC + RenderProps（本例）</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：React 高级模式偏函数式，读源码/造轮子必会；业务里按需取用，不必强行堆砌。</p>
+      </details>
+
     </main>
   )
 }
