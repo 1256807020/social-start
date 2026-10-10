@@ -5,6 +5,8 @@
 // 策略：增 / 改 / 删 全部【本地先改 state】，请求在后台飞；
 //       只有接口报错才把那条数据【还原回去（rollback）】。
 //       增删改后【永不重拉】全量列表（和 A 版最大的区别）。
+// Vue2 对照：Vue 里同样“先 this.list.unshift/改/过滤，再发请求，catch 里还原”，
+//           没有库自动托管，得自己手写回滚（和这里一模一样）。
 // 老师只搭外壳 + 说明，所有标 👉 的地方由【你】手写完成。
 // 接口契约见文件底部注释（和 A 版完全一致，共用 /api/react-learn）。
 // ============================================================
@@ -34,31 +36,49 @@ export default function OptimisticPage() {
   const getList = async (page: number) => {
     const resp = await fetch(`/api/react-learn?page=${page}&pageSize=5&sort=-id`);
     const j = await resp.json();
+    // 设置列表值，useEffect查询列表
     setList(j.data);
   };
 
-  // 👉 手敲 1：add —— 全乐观新增
-  //   1) e.preventDefault()
-  //   2) 若 title.trim() 为空 return
-  //   3) 造一个“临时项” temp = { id: Date.now(), title, done: false }
-  //      （用 Date.now() 当临时 id，等后端返回真实 id 再替换）
-  //   4) 乐观：setList(prev => [temp, ...prev])  本地立刻出现
-  //   5) 后台 POST，成功后把 temp 换成返回的 j.data（真实 id）：
-  //      setList(prev => prev.map(t => t.id === temp.id ? j.data : t))
-  //   6) 失败（!resp.ok 或 try/catch）：把 temp 从列表移除（回滚）+ alert 提示
-  //   7) 清空 title
+  // 🔧 固定写法：B 版 = 全乐观新增（本地先插，失败回滚）
   const add = async (e: React.FormEvent) => {
-    // 👉 在这里写上面的 1)~7)
+    e.preventDefault();
+    if (!title.trim()) return;
+    const temp: Todo = { id: Date.now(), title, done: false }; // 临时 id
+    setList((prev) => [temp, ...prev]); // 乐观插入
+    try {
+      const resp = await fetch("/api/react-learn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, done: false }),
+      });
+      if (!resp.ok) throw new Error("新增失败");
+      const j = await resp.json();
+      setList((prev) => prev.map((t) => (t.id === temp.id ? j.data : t))); // 换成真实 id
+    } catch {
+      setList((prev) => prev.filter((t) => t.id !== temp.id)); // 失败回滚：移除临时项
+      alert("新增失败，已回滚");
+    }
+    setTitle("");
   };
 
-  // 👉 手敲 2：saveEdit —— 全乐观改
-  //   1) 先记下来“原始标题” oldTitle（从 list 里按 id 找）
-  //   2) 乐观：setList(prev => prev.map(t => t.id===id ? {...t, title: editingText} : t))
-  //   3) 后台 PATCH { title: editingText }
-  //   4) 失败：把标题还原成 oldTitle（回滚）+ alert
-  //   5) 退出编辑态 setEditingId(null)
+  // 🔧 固定写法：B 版 = 乐观改标题（本地先换，失败还原）
   const saveEdit = async (id: number) => {
-    // 👉 在这里写上面的 1)~5)
+    const item = list.find((t) => t.id === id);
+    const oldTitle = item?.title ?? "";
+    setList((prev) => prev.map((t) => (t.id === id ? { ...t, title: editingText } : t))); // 乐观改
+    try {
+      const resp = await fetch(`/api/react-learn/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editingText }),
+      });
+      if (!resp.ok) throw new Error("修改失败");
+    } catch {
+      setList((prev) => prev.map((t) => (t.id === id ? { ...t, title: oldTitle } : t))); // 回滚
+      alert("修改失败，已回滚");
+    }
+    setEditingId(null);
   };
 
   const startEdit = (item: Todo) => {
@@ -66,14 +86,17 @@ export default function OptimisticPage() {
     setEditingText(item.title);
   };
 
-  // 👉 手敲 3：remove —— 全乐观删（带回滚，这是和 A 版最关键的差别！）
-  //   1) 先备份要删的那条 backup = list.find(t => t.id===id)
-  //   2) 乐观：setList(prev => prev.filter(t => t.id !== id))  本地立刻消失
-  //   3) 后台 DELETE
-  //   4) 失败：把 backup 加回来（回滚）+ alert
-  //   （A 版删了不回滚 → 删除请求失败会“假删除”，这是 B 版要修掉的坑）
+  // 🔧 固定写法：B 版 = 乐观删（本地先移除，失败加回）—— 和 A 版最关键的差别（A 删了不回滚）
   const remove = async (id: number) => {
-    // 👉 在这里写上面的 1)~4)
+    const backup = list.find((t) => t.id === id);
+    setList((prev) => prev.filter((t) => t.id !== id)); // 乐观删
+    try {
+      const resp = await fetch(`/api/react-learn/${id}`, { method: "DELETE" });
+      if (!resp.ok) throw new Error("删除失败");
+    } catch {
+      if (backup) setList((prev) => [...prev, backup]); // 回滚：加回
+      alert("删除失败，已回滚");
+    }
   };
 
   return (

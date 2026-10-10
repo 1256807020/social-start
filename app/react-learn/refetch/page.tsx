@@ -5,6 +5,8 @@
 // 策略：增 / 改 / 删 每次都先把请求发出去，【成功后再统一 GET 全量列表】。
 //       最“稳”（界面永远等于后端真相），但最慢、最费流量。
 //       作为 A/B 版的【对照】——体会“重拉”和“乐观”的取舍。
+// Vue2 对照：Vue 里写操作后手动 this.load() 再拉一次列表 ≈ 这里的 getList()；
+//           你已学的 react-query/swr 的 invalidateQueries 就是“自动重拉”的库托管版。
 // 老师只搭外壳 + 说明，所有标 👉 的地方由【你】手写完成。
 // 接口契约见文件底部注释（和 A 版完全一致，共用 /api/react-learn）。
 // ============================================================
@@ -42,22 +44,29 @@ export default function RefetchPage() {
     setPage(page);
   };
 
-  // 👉 手敲 1：add —— POST 成功后“重拉全量”
-  //   1) e.preventDefault(); title.trim() 为空 return
-  //   2) POST { title, done: false }
-  //   3) 成功：getList(1) 把列表拉到最新（回到第 1 页看新加的）
-  //   4) setTitle('')
+  // 🔧 固定写法：C 版 = POST 成功后统一「重拉全量」（界面永远等于后端真相，最稳但最慢）
   const add = async (e: React.FormEvent) => {
-    // 👉 在这里写上面的 1)~4)
+    e.preventDefault();
+    if (!title.trim()) return;
+    await fetch("/api/react-learn", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, done: false }),
+    });
+    setTitle("");
+    getList(1); // 重拉到第 1 页看新加的
   };
 
-  // 👉 手敲 2：saveEdit —— PATCH 成功后“重拉全量”
-  //   1) editingText.trim() 为空 return
-  //   2) PATCH { title: editingText }
-  //   3) 成功：getList(page) 重拉当前页
-  //   4) setEditingId(null)
+  // 🔧 固定写法：PATCH 成功后重拉当前页
   const saveEdit = async (id: number) => {
-    // 👉 在这里写上面的 1)~4)
+    if (!editingText.trim()) return;
+    await fetch(`/api/react-learn/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: editingText }),
+    });
+    setEditingId(null);
+    getList(page);
   };
 
   const startEdit = (item: Todo) => {
@@ -65,14 +74,13 @@ export default function RefetchPage() {
     setEditingText(item.title);
   };
 
-  // 👉 手敲 3：remove —— DELETE 成功后“重拉全量”
-  //   1) DELETE /api/react-learn/:id
-  //   2) 成功：getList(page) 重拉当前页（这条就没了）
+  // 🔧 固定写法：DELETE 成功后重拉当前页（这条就没了）
   const remove = async (id: number) => {
-    // 👉 在这里写上面的 1)~2)
+    await fetch(`/api/react-learn/${id}`, { method: "DELETE" });
+    getList(page);
   };
 
-  // 👉 手敲 4：翻页（和 A 版一样，getList(p)）
+  // 🔧 固定写法：翻页（getList(p)）
   const goPage = (p: number) => {
     getList(p);
   };
