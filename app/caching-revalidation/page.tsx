@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（全栈篇）· 缓存与重新验证（caching & revalidation）
+// · Vue2/Vue3 对照：Vue 无内置 HTTP 缓存；Nuxt useFetch 自带缓存与重新验证（与 Next 思路接近）；
+// · React/Next 对照：fetch 的 force-cache / next:{revalidate} / no-store / tags + revalidateTag 四种档位，本例直接读 /api/todo 演示。
+// 📌 实战定位：缓存/重验【了解即可·进阶】；调性能与新鲜度必点，业务接口常用 no-store 保实时。
+// 🧭 学习模式：🔧固定写法=next:{tags} + revalidateTag 让缓存失效；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// 注：本例全程走真实 /api/todo 接口（带 cache 策略），未直读 json，符合铁律。
+// ───────────────────────────────────────────────────────────
 import { revalidateTag } from "next/cache";
 
 /**
@@ -105,6 +113,22 @@ export default async function CachingRevalidationPage() {
           </li>
         </ul>
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b"><th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 / Vue3 (Nuxt)</th><th className="px-2 py-1">React (Next)</th></tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">缓存档位</td><td className="px-2 py-1">useFetch 缓存</td><td className="px-2 py-1">force-cache / revalidate / no-store</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">定时刷新</td><td className="px-2 py-1">revalidate</td><td className="px-2 py-1">next: { revalidate }</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">强制实时</td><td className="px-2 py-1">手关缓存</td><td className="px-2 py-1">no-store</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">精确失效</td><td className="px-2 py-1">Nuxt 类似</td><td className="px-2 py-1">tags + revalidateTag</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：四档缓存；业务接口常用 no-store 保实时，打 tag + revalidateTag 做精确失效。本项目数据统一走 /api 真实接口。</p>
+      </details>
+
     </main>
   );
 }
