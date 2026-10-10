@@ -23,12 +23,12 @@ pnpm dev          # 访问 http://localhost:4000/admin
 | `components/admin/admin-shell.tsx` | 侧边栏 + 顶栏 + 暗色切换（client） |
 | `app/admin/page.tsx` | 仪表盘（server，Tailwind 卡片） |
 | `app/admin/users/page.tsx` | 用户 CRUD（手写 table + dialog，便于看清底层） |
-| `lib/users-store.ts` | 内存假库 |
+| `data/users.json` | 真实存储（基座通用 CRUD 接口 /api/users 直接读写，无需自建路由） |
 
 ## 给你的练习 TODO
 1. [ ] 跑 `npx shadcn add table dialog input card select` 把官方组件拉进来，把 `users/page.tsx` 的手写 `<table>` 换成 `<Table>`、手写弹窗换成 `<Dialog>`（结构不变，只换标签）。
 2. [ ] 用 `next-themes` 接管暗色（跟随系统 + 持久化），替换手写 `classList.toggle`。
-3. [ ] 接真实接口：新建 `app/api/users` 路由，前端用 `fetch` / React Query。
+3. [x] 已接真实接口：`data/users.json` + 基座通用 `/api/users`（查 GET / 增 POST / 改 PATCH :id / 删 DELETE :id，信封 {code,data,msg}），前端 fetch 解包 `j.data`；可换 React Query。
 4. [ ] 加移动端抽屉菜单（shadcn 的 `Sheet` 组件）替换侧边栏在窄屏的展示。
 
 ## 对比

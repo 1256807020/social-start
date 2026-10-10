@@ -5,34 +5,48 @@
 //   shadcn 是“把组件源码复制进项目”的同思路方案，比 antd 更可控、无 AntdRegistry 运行时负担）。
 //   本页是 admin CRUD 的「手写底层版」，看清原理后生产用 `npx shadcn add table dialog` 替换标签即可。
 //
-// 🔧 固定写法（本页用到）：
-//   • 'use client' 页用 useState 管「表格数据 + 弹窗开关 + 表单」（受控 input/select，见 react-basics）
-//   • 弹窗 = fixed 遮罩 div + 居中卡片（Dialog 组件的底层原理，不引库也能跑）
-//   • 表单校验这里用最朴素 if+alert，更优雅见 learn/rhf-zod-crud（RHF + Zod）
+// 🔧 数据来源：真实 data/users.json，经基座「通用 CRUD 接口」/api/users 取数
+//   （一个 JSON = 一套接口，无需写路由；统一信封 {code,data,msg}，客户端解包 j.data）。
+//   • 查 GET /api/users、增 POST /api/users、改 PATCH /api/users/:id（增量合并）、删 DELETE /api/users/:id。
+//   • 'use client' 页用 useState 管「表格数据 + 弹窗开关 + 表单」，数据来自接口而非本地内存。
+//   • 弹窗 = fixed 遮罩 div + 居中卡片（Dialog 组件的底层原理，不引库也能跑）。
+//   • 表单校验这里用最朴素 if+alert，更优雅见 learn/rhf-zod-crud（RHF + Zod）。
 //
 // 📌 点名已学知识点（不展开）：useState 受控表单 / 列表增删改、React 事件 onClick/onChange、
-//   Server vs Client Component 边界（本页 'use client'）、Tailwind 工具类（react-basics-styling）
-//
-// 为什么「手写」而不直接用 shadcn 的 Table/Dialog 组件：
-//   1) 让你看清底层就是 <table> + 一个 fixed 遮罩 div；
-//   2) 真实项目里跑 `npx shadcn add table dialog input card select` 就能换成官方组件，
-//      替换时只改 JSX，不改用结构。
+//   Server vs Client Component 边界（本页 'use client'）、fetch 调通用接口 + 信封解包、
+//   Tailwind 工具类（react-basics-styling）
 // ============================================================================
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { listUsers, createUser, updateUser, deleteUser, type User } from '../../../lib/users-store';
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'editor' | 'viewer';
+  status: 'active' | 'disabled';
+};
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(() => listUsers());
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const [form, setForm] = useState({ name: '', email: '', role: 'viewer', status: 'active' });
 
-  function refresh() {
-    setUsers(listUsers());
-  }
+  // 查（GET /api/users）—— 统一信封解包 j.data || []
+  const refresh = useCallback(async () => {
+    const r = await fetch('/api/users?pageSize=20&sort=-id');
+    const j = await r.json();
+    setUsers(j.data || []);
+  }, []);
+
+  useEffect(() => {
+    refresh().finally(() => setLoading(false));
+  }, []);
+
   function openCreate() {
     setEditing(null);
     setForm({ name: '', email: '', role: 'viewer', status: 'active' });
@@ -43,19 +57,37 @@ export default function UsersPage() {
     setForm({ name: u.name, email: u.email, role: u.role, status: u.status });
     setOpen(true);
   }
-  function save() {
+  async function save() {
     if (!form.name || !form.email) {
       alert('姓名和邮箱必填');
       return;
     }
-    if (editing) updateUser(editing.id, form);
-    else createUser(form);
+    if (editing) {
+      // 改（PATCH /api/users/:id，增量合并）
+      await fetch(`/api/users/${editing.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+    } else {
+      // 增（POST /api/users）
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+    }
     setOpen(false);
     refresh();
   }
-  function remove(id: number) {
-    deleteUser(id);
+  async function remove(id: number) {
+    // 删（DELETE /api/users/:id）
+    await fetch(`/api/users/${id}`, { method: 'DELETE' });
     refresh();
+  }
+
+  if (loading) {
+    return <div className="text-sm text-muted-foreground">加载中…</div>;
   }
 
   return (

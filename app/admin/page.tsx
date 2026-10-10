@@ -1,18 +1,25 @@
 // ============================================================================
-// 仪表盘页（Server Component，直接读假库）
+// 仪表盘页（Server Component，经 /api/users 接口读真实数据）
 // ----------------------------------------------------------------------------
-// 【实战定位】后台仪表盘 = 实际项目【常用】。Server Component 直接读数据渲染，
+// 【实战定位】后台仪表盘 = 实际项目【常用】。Server Component 经接口读真实数据渲染，
 //   无需 'use client' / useState（和 users 页的客户端 CRUD 形成对照：读多写少用 Server，交互用 Client）。
 // 🔧 固定写法：卡片用 Tailwind 工具类 + shadcn 颜色变量（--card / --border / --muted-foreground），亮暗自动翻。
 // 📌 点名已学：Server Component 渲染（next 基础）、Tailwind 工具类（react-basics-styling）。
 // ============================================================================
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { listUsers } from '../../lib/users-store';
 
-export default function DashboardPage() {
-  const users = listUsers();
-  const active = users.filter((u) => u.status === 'active').length;
+// 一律走基座通用接口 /api/users（一个 JSON = 一套接口，无需自建路由）；统一信封解包 (await res.json()).data
+async function getUsers(): Promise<any[]> {
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
+  const res = await fetch(`${base}/api/users?pageSize=20&sort=-id`, { cache: 'no-store' });
+  const j = await res.json();
+  return j.data || [];
+}
+
+export default async function DashboardPage() {
+  const users = await getUsers();
+  const active = users.filter((u: any) => u.status === 'active').length;
 
   // 卡片用 Tailwind 工具类 + shadcn 的颜色变量（--card / --border / --muted-foreground）
   return (
