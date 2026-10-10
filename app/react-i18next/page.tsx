@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（国际化篇）· react-i18next
+// · Vue2 对照：vue-i18n（$t 全局、&lt;i18n&gt; 模板），概念几乎一致；
+// · Vue3 对照：vue-i18n@9（composition 的 useI18n()），同 react-i18next 心智；
+// · React 对照：react-i18next 用 useTranslation() 拿 t()，changeLanguage 切语言（本例）。
+// 📌 实战定位：多语言【常规业务常用】；react-i18next 框架无关、生态最全；Next 也可用 next-intl（见 next-middleware-i18n）。
+// 🧭 学习模式：🔧固定写法=useTranslation + t() + changeLanguage；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 // 【react-i18next 分支 · learn/react-i18next】
@@ -135,6 +143,27 @@ export default function ReactI18nPage() {
           {t('next')}
         </button>
       </div>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th>
+              <th className="px-2 py-1">Vue2</th>
+              <th className="px-2 py-1">Vue3</th>
+              <th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">取文案</td><td className="px-2 py-1">$t(...)</td><td className="px-2 py-1">useI18n().t</td><td className="px-2 py-1">useTranslation().t（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">切语言</td><td className="px-2 py-1">$i18n.locale=</td><td className="px-2 py-1">locale.value=</td><td className="px-2 py-1">i18n.changeLanguage</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">配置</td><td className="px-2 py-1">对象配置</td><td className="px-2 py-1">对象配置</td><td className="px-2 py-1">i18n.init({resources})</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">生态</td><td className="px-2 py-1">vue-i18n</td><td className="px-2 py-1">vue-i18n@9</td><td className="px-2 py-1">react-i18next</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：i18n 心智三框架一致；CRUD 仍走 /api/todo，文案随语言实时切换。</p>
+      </details>
+
     </main>
   )
 }
