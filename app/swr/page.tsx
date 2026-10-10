@@ -17,7 +17,12 @@ const PAGE_SIZE = 8
 
 // 通用 fetcher
 // 🔧 固定写法：fetcher(url) 只负责「发请求 + 返回数据」，SWR 拿它去填缓存；返回类型由 useSWR<T> 泛型决定
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+// 👉 检查 res.ok 再 json()（同源坑：react-query 那次也补了——否则后端 500 会把错误信封当正常 data 缓存，列表静默空掉）
+const fetcher = async (url: string) => {
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(`请求失败：${r.status}`)
+  return r.json()
+}
 
 export default function SwrPage() {
   const [page, setPage] = useState(1)
