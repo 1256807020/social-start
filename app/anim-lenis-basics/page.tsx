@@ -1,3 +1,10 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（动画·平滑滚动篇）· Lenis
+// · Vue2/Vue3 对照：Vue 没有内置平滑滚动；同样用 Lenis / GSAP 库（框架无关），在 onMounted 里 new Lenis()；
+// · React 对照：useRef 拿组件 + useEffect 里 new Lenis()、raf 驱动、卸载 destroy（本例）。
+// 📌 实战定位：平滑滚动【了解即可·进阶】；是 GSAP ScrollTrigger 的黄金搭档，做“丝滑惯性滚动”网站常用。
+// 🧭 学习模式：🔧固定写法=new Lenis() + raf 循环 + destroy；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { useEffect, useRef } from 'react'
@@ -78,6 +85,22 @@ export default function LenisBasicsPage() {
           2. 自定义 easing：(t:number)=>Math.min(1,1.001-Math.pow(2,-10*t))
           3. 把 raf 接到 gsap.ticker 上（见 anim-scroll-trigger）以统一驱动
       */}
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b"><th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 / Vue3</th><th className="px-2 py-1">React</th></tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">平滑滚动</td><td className="px-2 py-1">无内置，用 Lenis</td><td className="px-2 py-1">无内置，用 Lenis（本例）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">初始化</td><td className="px-2 py-1">onMounted new Lenis()</td><td className="px-2 py-1">useEffect new Lenis()</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">驱动</td><td className="px-2 py-1">requestAnimationFrame</td><td className="px-2 py-1">requestAnimationFrame</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">清理</td><td className="px-2 py-1">onUnmounted destroy</td><td className="px-2 py-1">useEffect 清理 destroy</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：Lenis 框架无关，React/Vue 用法几乎一致；关键是 raf 循环 + 卸载销毁。</p>
+      </details>
+
     </main>
   )
 }
