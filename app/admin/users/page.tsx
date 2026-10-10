@@ -1,11 +1,22 @@
 // ============================================================================
 // 用户管理页：表格 + 弹窗表单 + 删除（CRUD 核心）
 // ----------------------------------------------------------------------------
-// 这里故意“手写”表格和弹窗（不用 shadcn 的 Table/Dialog 组件），原因：
+// 【实战定位】shadcn/ui 后台模板 = 实际项目【常用】（你 FMVPBaseUI 就是 Tailwind+Radix 路线，
+//   shadcn 是“把组件源码复制进项目”的同思路方案，比 antd 更可控、无 AntdRegistry 运行时负担）。
+//   本页是 admin CRUD 的「手写底层版」，看清原理后生产用 `npx shadcn add table dialog` 替换标签即可。
+//
+// 🔧 固定写法（本页用到）：
+//   • 'use client' 页用 useState 管「表格数据 + 弹窗开关 + 表单」（受控 input/select，见 react-basics）
+//   • 弹窗 = fixed 遮罩 div + 居中卡片（Dialog 组件的底层原理，不引库也能跑）
+//   • 表单校验这里用最朴素 if+alert，更优雅见 learn/rhf-zod-crud（RHF + Zod）
+//
+// 📌 点名已学知识点（不展开）：useState 受控表单 / 列表增删改、React 事件 onClick/onChange、
+//   Server vs Client Component 边界（本页 'use client'）、Tailwind 工具类（react-basics-styling）
+//
+// 为什么「手写」而不直接用 shadcn 的 Table/Dialog 组件：
 //   1) 让你看清底层就是 <table> + 一个 fixed 遮罩 div；
 //   2) 真实项目里跑 `npx shadcn add table dialog input card select` 就能换成官方组件，
 //      替换时只改 JSX，不改用结构。
-// 表单校验这里用最朴素的 `if (!form.name) alert(...)`，更优雅的做法见 learn/rhf-zod-crud。
 // ============================================================================
 'use client';
 

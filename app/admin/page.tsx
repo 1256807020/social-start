@@ -1,5 +1,10 @@
 // ============================================================================
 // 仪表盘页（Server Component，直接读假库）
+// ----------------------------------------------------------------------------
+// 【实战定位】后台仪表盘 = 实际项目【常用】。Server Component 直接读数据渲染，
+//   无需 'use client' / useState（和 users 页的客户端 CRUD 形成对照：读多写少用 Server，交互用 Client）。
+// 🔧 固定写法：卡片用 Tailwind 工具类 + shadcn 颜色变量（--card / --border / --muted-foreground），亮暗自动翻。
+// 📌 点名已学：Server Component 渲染（next 基础）、Tailwind 工具类（react-basics-styling）。
 // ============================================================================
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
