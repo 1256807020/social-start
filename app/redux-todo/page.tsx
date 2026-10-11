@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（Redux 基础篇）· 经典 Redux 数据流
+// · Vue2 对照：Vuex（state/getters/mutations/actions）
+// · Vue3 对照：Pinia（已取代 Vuex）
+// · React 对照：Redux 经典三件套：action → reducer → store；dispatch 触发，connect/useSelector 读
+// 📌 实战定位：Redux 基础属【了解即可·进阶】；现代项目多用 Redux Toolkit 或 Zustand，但懂经典 Redux 才看得懂老代码与 RTK 封装。
+// 🧭 学习模式：🔧固定写法=createStore(reducer)；useSelector(s=>s.todos)；dispatch(addTodo(t))；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 "use client";
 
 import { useState } from "react";
@@ -184,6 +192,23 @@ export default function ReduxTodoPage() {
   return (
     <Provider store={store}>
       <TodoList />
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">状态容器</td><td className="px-2 py-1">Vuex.Store</td><td className="px-2 py-1">Pinia store</td><td className="px-2 py-1">createStore(reducer)</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">改状态</td><td className="px-2 py-1">commit(mutation)</td><td className="px-2 py-1">action 直接改</td><td className="px-2 py-1">dispatch(action) → reducer</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">读状态</td><td className="px-2 py-1">this.$store</td><td className="px-2 py-1">useStore()</td><td className="px-2 py-1">useSelector(s=&gt;s.x)</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">样板量</td><td className="px-2 py-1">中</td><td className="px-2 py-1">低（Pinia）</td><td className="px-2 py-1">高（经典 Redux）</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：经典 Redux 强调「纯 reducer + 不可变更新 + dispatch action」，样板多；新项目优先 RTK/Zustand。</p>
+      </details>
     </Provider>
   );
 }
