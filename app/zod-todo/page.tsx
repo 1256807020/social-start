@@ -5,35 +5,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { todoSchema, TodoForm } from './schema'
 
-/**
- * Zod + react-hook-form 是 React 表单校验的「标准组合」：
- *   • zod         = 纯 TS 的 schema 校验器（定义规则 + 用 z.infer 推导类型 TodoForm）
- *   • RHF         = 接管表单的 register/handleSubmit，避免受控组件每次按键都重渲染
- *   • zodResolver = 把 zod schema 接到 RHF 上，校验失败就拦在 onSubmit 门外
- *
- * ───── 从 Vue 转 React（表单校验篇）─────
- *   • Vue3 同款思路：vee-validate 的 useForm + toTypedSchema(todoSchema)，zod 规则直接复用。
- *       const { defineField, handleSubmit, errors } = useForm({ validationSchema: toTypedSchema(todoSchema) })
- *       提交也是 handleSubmit(fn)，失败同样进不来——心智和 RHF+zod 几乎一致。
- *   • Vue2 时代：多在 methods 里手写 if/else 校验，或 VeeValidate v2 用 <ValidationProvider> 包裹。
- *   共同点：都是「先声明式定义 schema → 提交时校验 → 失败显示 errors.message」。
- *   zod 的 z.infer 自动出类型，少写一份 interface（Vue 侧通常得自己再写个类型）。
- *
- * ───── 生产级复杂度扩展（知道复杂表单还差哪些常用例子）─────
- *   本例只覆盖了「单字段多规则」(✅)。生产表单的常见扩展与三框架对照：
- *   ┌──────────────────┬─────────────────────────────────┬──────────────────────────┬────────────┐
- *   │ 复杂度           │ RHF + Zod                        │ Element UI / Plus        │ 本例对应   │
- *   ├──────────────────┼─────────────────────────────────┼──────────────────────────┼────────────┤
- *   │ 单字段多规则     │ .min().max().regex() 链式        │ rules 数组多项           │ ✅ 已会   │
- *   │ 跨字段校验       │ .refine()/.superRefine()         │ validator 自定义函数     │ 下一步     │
- *   │ 异步校验(查重)   │ z.string().refine(async v=>...)  │ asyncValidator           │ 下一步     │
- *   │ 嵌套/数组字段    │ z.object({addr:z.object(...)})/   │ prop 嵌套 + el-form 嵌套 │ 下一步     │
- *   │                  │ z.array(...)                    │                          │            │
- *   └──────────────────┴─────────────────────────────────┴──────────────────────────┴────────────┘
- *   关键心智：生产表单 = 字段集 + 集中式规则集（规则可叠加），UI 只负责渲染报错。
- *   跨字段/异步在 Zod 里用 .refine() 兜底，≈ Element UI 的 validator / asyncValidator。
- *   想看完整 CRUD 加强版，参考同仓库 learn/rhf-zod-crud 分支。
- */
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（运行时校验篇）· Zod
+// · Vue2 对照：手写 if / vee-validate
+// · Vue3 对照：zod + vee-validate / 手写
+// · React 对照：Zod 用 schema 声明校验，编译期拿类型、运行期校验数据（接口/表单通用）
+// 📌 实战定位：Zod 属【常规业务常用】；前后端共享 schema，类型与校验一份搞定，是 TS 项目的标配。
+// 🧭 学习模式：🔧固定写法=const S=z.object({title:z.string().min(1)}); S.parse(data) / type T=z.infer<typeof S>；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 export default function ZodTodoPage() {
   // ── 固定模板：以下 useForm 解构 + resolver 是 RHF+Zod 的标准接法 ──
   const {
@@ -151,6 +130,23 @@ export default function ZodTodoPage() {
             </tr>
           </tbody>
         </table>
+      </details>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">校验声明</td><td className="px-2 py-1">手写 if</td><td className="px-2 py-1">zod / yup</td><td className="px-2 py-1">zod schema</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">类型推导</td><td className="px-2 py-1">手动 interface</td><td className="px-2 py-1">z.infer</td><td className="px-2 py-1">z.infer&lt;typeof S&gt;</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">运行期校验</td><td className="px-2 py-1">if 判断</td><td className="px-2 py-1">S.parse</td><td className="px-2 py-1">S.safeParse</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">使用场景</td><td className="px-2 py-1">表单</td><td className="px-2 py-1">表单/接口</td><td className="px-2 py-1">表单 + 接口响应校验</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：Zod 一处声明、同时产出 TS 类型与运行期校验；配合表单（RHF）或校验接口返回都极顺手。</p>
       </details>
     </main>
   )
