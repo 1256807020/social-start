@@ -1,10 +1,13 @@
 'use client'
 
-// RTK 页面：用 react-redux 的 Provider + useSelector/useDispatch 连接 store。
-// ───── 从 Vue 转 React（RTK 组件篇）─────
-//   • Vue3/Pinia：组件里 storeToRefs(store) 读、async action 里 await 后直接改；这里 useSelector 读、useDispatch 触发 thunk。
-//   • Vue2/Vuex：this.$store.dispatch('load') 触发 action、action 里 commit 改 state；这里 dispatch(loadTodos(1)) 触发 thunk、thunk 在 fulfilled 里 Immer 改 state。
-//   关键技巧：RTK 的 dispatch(thunk()) 返回 Promise，所以能 .then(reload) 在「请求成功后」自动刷新列表（≈ Vuex action 的 await 后再次 dispatch）。
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（Redux Toolkit 篇）· 官方推荐写法
+// · Vue2 对照：Vuex
+// · Vue3 对照：Pinia
+// · React 对照：RTK = createSlice（自动生成 action）+ configureStore，大幅减少样板
+// 📌 实战定位：Redux Toolkit 属【常规业务常用·进阶】；要上 Redux 时官方首推，比经典 Redux 省 80% 代码。
+// 🧭 学习模式：🔧固定写法=createSlice({name,initialState,reducers:{add:(s,a)=>{s.push(a.payload)}}}); configureStore({reducer}); 👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react'
 import { Provider, useDispatch, useSelector } from 'react-redux'
 import {
@@ -191,6 +194,23 @@ export default function ReduxToolkitPage() {
   return (
     <Provider store={store}>
       <TodoApp />
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">建 store</td><td className="px-2 py-1">Vuex.Store</td><td className="px-2 py-1">defineStore</td><td className="px-2 py-1">configureStore({reducer})</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">写逻辑</td><td className="px-2 py-1">mutations</td><td className="px-2 py-1">action 直接改</td><td className="px-2 py-1">slice.reducers（可直接改，内部用 Immer）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">action</td><td className="px-2 py-1">commit type</td><td className="px-2 py-1">自动</td><td className="px-2 py-1">createSlice 自动生成</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">样板量</td><td className="px-2 py-1">中</td><td className="px-2 py-1">低</td><td className="px-2 py-1">低（RTK）</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：RTK 用 createSlice 自动产出 action、内部靠 Immer 让你「直接改」state，是 Redux 的现代正确姿势。</p>
+      </details>
     </Provider>
   )
 }
