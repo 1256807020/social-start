@@ -12,7 +12,7 @@
 // 演示：i18next + react-i18next 做多语言（国内项目常用，比 next-intl 更框架无关）。
 // 业务：复用 /api/todo 做增删改查，UI 文案随语言切换。
 import './i18n'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from './i18n'
 
@@ -51,7 +51,7 @@ export default function ReactI18nPage() {
     setTitle('')
     load(page)
   }
-
+  // Partial<Todo> 等价于 { id?: number; title?: string; done?: boolean } —— 所有字段带 ? 可选。
   const patch = async (id: number, p: Partial<Todo>) => {
     await fetch(`/api/todo/${id}`, {
       method: 'PATCH',
@@ -67,7 +67,10 @@ export default function ReactI18nPage() {
   }
 
   const totalPages = Math.max(Math.ceil(total / pageSize), 1)
-
+  // 挂载后发一次首屏列表请求；等价于 Vue2 在 mounted()/created() 里调 load()，空依赖数组 [] 表示「只跑一次」。
+  useEffect(() => {
+    load(1)
+  }, [])
   return (
     <main className="mx-auto max-w-3xl p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -157,7 +160,7 @@ export default function ReactI18nPage() {
           <tbody>
             <tr className="border-b"><td className="px-2 py-1">取文案</td><td className="px-2 py-1">$t(...)</td><td className="px-2 py-1">useI18n().t</td><td className="px-2 py-1">useTranslation().t（本例）</td></tr>
             <tr className="border-b"><td className="px-2 py-1">切语言</td><td className="px-2 py-1">$i18n.locale=</td><td className="px-2 py-1">locale.value=</td><td className="px-2 py-1">i18n.changeLanguage</td></tr>
-            <tr className="border-b"><td className="px-2 py-1">配置</td><td className="px-2 py-1">对象配置</td><td className="px-2 py-1">对象配置</td><td className="px-2 py-1">i18n.init({resources})</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">配置</td><td className="px-2 py-1">对象配置</td><td className="px-2 py-1">对象配置</td><td className="px-2 py-1">{'i18n.init({resources})'}</td></tr>
             <tr className="border-b"><td className="px-2 py-1">生态</td><td className="px-2 py-1">vue-i18n</td><td className="px-2 py-1">vue-i18n@9</td><td className="px-2 py-1">react-i18next</td></tr>
           </tbody>
         </table>
