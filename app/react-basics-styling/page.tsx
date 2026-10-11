@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（样式篇）· className 与 style 对象
+// · Vue2 对照：class / :class / :style（字符串或对象均可）
+// · Vue3 对照：同 Vue2，:style 接受对象/数组/字符串
+// · React 对照：className（字符串）+ style（必须对象、属性驼峰）
+// 📌 实战定位：className/style 属【常规业务常用】；Tailwind 下几乎只写 className，少碰 style。
+// 🧭 学习模式：🔧固定写法=<div className="text-red"> + style={{color:'red'}}；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import type { ReactNode } from 'react'
@@ -110,6 +118,23 @@ export default function ReactBasicsStylingPage() {
           心智差：React 用 <code>className</code>（字符串），Vue 用 <code>class</code>；React 的 <code>style</code> 是【对象 + 驼峰】，Vue 的 <code>:style</code> 更宽松（对象 / 字符串 / 数组都行）。
         </p>
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">class 名</td><td className="px-2 py-1">class / :class</td><td className="px-2 py-1">:class</td><td className="px-2 py-1">className（字符串）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">动态类</td><td className="px-2 py-1">:class="{active:ok}"</td><td className="px-2 py-1">:class="{active:ok}"</td><td className="px-2 py-1">className={ok?'active':''}</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">内联样式</td><td className="px-2 py-1">:style="{color:'red'}"</td><td className="px-2 py-1">:style="{color:'red'}"</td><td className="px-2 py-1">style={{color:'red'}}（驼峰）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">CSS 方案</td><td className="px-2 py-1">scoped / module</td><td className="px-2 py-1">scoped / module</td><td className="px-2 py-1">CSS Module / Tailwind</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：React 用 className 不是 class；style 必须是驼峰对象（fontSize 不是 font-size）。</p>
+      </details>
     </main>
   )
 }
