@@ -43,6 +43,10 @@ export default function TanStackTablePage() {
     load(1)
   }, [])
 
+  // Partial<Todo> = TS 内置工具类型，把 Todo 的所有字段变成「可选」，
+  // Partial<Todo> 等价于 { id?: number; title?: string; done?: boolean } —— 所有字段带 ? 可选。
+  // 因此 p 可以只传要改的字段，例如 { done:true } 或 { title:'新名' }，不必补齐 id/title/done 全部。
+  // 对应后端 PATCH /api/todo/:id 的「部分更新」语义（只更新请求体里出现的字段）。
   const patch = async (id: number, p: Partial<Todo>) => {
     await fetch(`/api/todo/${id}`, {
       method: 'PATCH',
