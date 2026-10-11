@@ -1,18 +1,11 @@
-// ============================================================================
-// Jotai 练习页（客户端组件）
-// ----------------------------------------------------------------------------
-// 演示三种“读/写原子”的 hook：
-//   - useAtom(atom)        → 读写（返回 [value, setValue]）
-//   - useAtomValue(atom)   → 只读（只要值）
-//   - useSetAtom(atom)     → 只写（只要 setter）
-// 还演示 Provider：给本页圈一个独立的 store（避免 SSR 下跨请求串状态）。
-//
-// ───── 从 Vue 转 React（Jotai 组件篇）─────
-//   • Vue3/Pinia：组件里直接 storeToRefs(store) 读、store.xxx() 调 action；Jotai 用上面三个 hook 按「读写/只读/只写」精确订阅。
-//     对应：useAtom ≈ ref 双向绑、useAtomValue ≈ computed/getter 只读、useSetAtom ≈ 只拿 action 函数。
-//   • Vue2/Vuex：this.$store.state.xxx 读、this.$store.dispatch 调；Jotai 细到「单个原子」粒度，重渲染更精准。
-//   关键差异：Vue/Pinia 是「store 整体」，Jotai 是「原子组合」——只用某个原子的组件，其它原子变它不重渲染。
-// ============================================================================
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（原子化状态篇）· Jotai
+// · Vue2 对照：无直接对应（靠 Vuex）
+// · Vue3 对照：无直接对应（靠 Pinia / reactive）
+// · React 对照：Jotai = 原子（atom）组合，每个状态独立、按需订阅，比 Zustand 更细粒度
+// 📌 实战定位：Jotai 属【了解即可·进阶】；细粒度原子状态，适合状态间依赖复杂的场景；日常 Zustand 更通用。
+// 🧭 学习模式：🔧固定写法=const countAtom=atom(0); const [c,setC]=useAtom(countAtom)；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 'use client';
 
 import { useAtom, useAtomValue, useSetAtom, Provider } from 'jotai';
@@ -147,6 +140,23 @@ export default function JotaiPage() {
             </tbody>
           </table>
         </details>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">状态单元</td><td className="px-2 py-1">—</td><td className="px-2 py-1">—</td><td className="px-2 py-1">atom（原子）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">组合</td><td className="px-2 py-1">—</td><td className="px-2 py-1">computed</td><td className="px-2 py-1">atom 间可相互依赖（派生原子）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">订阅粒度</td><td className="px-2 py-1">store 级</td><td className="px-2 py-1">store 级</td><td className="px-2 py-1">原子级（只重渲用到该原子的组件）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">对标</td><td className="px-2 py-1">Vuex</td><td className="px-2 py-1">Pinia</td><td className="px-2 py-1">Jotai（细粒度）/ Zustand（store 级）</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：Jotai 把状态拆成可组合的 atom，派生原子类似 Vue computed；精细化订阅、适合复杂依赖图。</p>
+      </details>
       </main>
     </Provider>
   );
