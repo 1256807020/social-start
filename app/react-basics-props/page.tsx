@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（props 数据流篇）· 单向数据流
+// · Vue2 对照：props 向下、$emit 向上；或 .sync
+// · Vue3 对照：defineProps 向下、defineEmits 向上
+// · React 对照：props 向下（父传子）；子传父靠「父传下来的回调函数」
+// 📌 实战定位：props 单向流属【常规业务常用】；React 里「子改父」= 父传 setter 当 prop 给子调用。
+// 🧭 学习模式：🔧固定写法={<Child value={v} onChange={fn}/>}；子内 props.onChange(...)；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 "use client";
 
 import { type MouseEvent, type ReactNode, useState } from "react";
@@ -204,6 +212,23 @@ export default function ReactBasicsPropsPage() {
         <Contact />
         <Menu />
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">父→子</td><td className="px-2 py-1">props（驼峰）</td><td className="px-2 py-1">defineProps</td><td className="px-2 py-1">函数参数 props</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">子→父</td><td className="px-2 py-1">$emit / defineEmits</td><td className="px-2 py-1">defineEmits</td><td className="px-2 py-1">父传回调函数当 prop</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">双向</td><td className="px-2 py-1">.sync / v-model</td><td className="px-2 py-1">v-model</td><td className="px-2 py-1">value + onChange 约定（受控）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">透传</td><td className="px-2 py-1">v-bind="$attrs"</td><td className="px-2 py-1">inheritAttrs / $attrs</td><td className="px-2 py-1">JSX 直接展开 {...props}</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：React 没有 emit，子要改父数据就调用父给的回调；受控组件（value+onChange）是表单基石。</p>
+      </details>
     </main>
   );
 }
