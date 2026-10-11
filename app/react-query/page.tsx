@@ -10,17 +10,14 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-/**
- * TanStack Query：服务端状态管理（搬运自 ReactAdm03）
- * 用基座自带的 /api/todo（列表/新增）与 /api/todo/:id（改/删）当后端，零改动，已补齐为「增删改查」完整样板。
- * 练习前先：pnpm add @tanstack/react-query
- * 每个 👉 是给你手敲的练习点。
- *
- * ───── 从 Vue 转 React（服务端状态篇）─────
- *   • TanStack Query 管「服务端状态」：接口数据 + 缓存 + loading + 自动重验。它和 redux/zustand/jotai（管「客户端状态」：表单/UI）是【不同层】，互补不替代。
- *   • Vue 对照：TanStack Query 有官方 Vue 版 `@tanstack/vue-query`（useQuery/useMutation 与 React 版一模一样）；
- *     否则 Vue 常见写法是 Pinia 存接口数据 + 手写 refetch。心智：queryKey 是缓存键，变了自动重拉；写成功后 invalidateQueries 让列表重取。
- */
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（服务端状态篇）· TanStack Query
+// · Vue2 对照：axios + data 里手动管 loading/缓存
+// · Vue3 对照：@tanstack/vue-query（API 一致）
+// · React 对照：useQuery / useMutation 自动管缓存、loading、重试、失效重拉
+// 📌 实战定位：TanStack Query 属【常规业务常用·进阶】；「服务端状态」（接口数据）的标配，告别手写 loading/缓存。走 /api/todo。
+// 🧭 学习模式：🔧固定写法=useQuery({queryKey:['todos'],queryFn:()=>fetchTodos()}); useMutation({onSuccess:()=>queryClient.invalidateQueries()})；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 const queryClient = new QueryClient();
 
 async function fetchTodos(): Promise<{ id: number; title: string }[]> {
@@ -302,6 +299,23 @@ export default function ReactQueryPage() {
             DELETE / invalidate）留给你手敲。
           </p>
         </details>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">客户端状态</td><td className="px-2 py-1">data 手写</td><td className="px-2 py-1">ref</td><td className="px-2 py-1">useState</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">服务端状态</td><td className="px-2 py-1">axios + 手写</td><td className="px-2 py-1">@tanstack/vue-query</td><td className="px-2 py-1">@tanstack/react-query</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">缓存/失效</td><td className="px-2 py-1">手动</td><td className="px-2 py-1">queryClient</td><td className="px-2 py-1">useQuery + invalidateQueries</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">写操作</td><td className="px-2 py-1">axios.post</td><td className="px-2 py-1">useMutation</td><td className="px-2 py-1">useMutation + 失效重拉</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：React Query 把「取数」抽象成查询，自动缓存与失效；本项目接 /api/todo，列表增删改后 invalidate 即重拉。</p>
+      </details>
       </main>
     </QueryClientProvider>
   );
