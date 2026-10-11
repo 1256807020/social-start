@@ -1,14 +1,13 @@
 "use client";
 
-// 【SWR 分支 · learn/swr】
-// 演示：Vercel 官方数据获取库 SWR（比 React Query 更轻量，专注「客户端数据同步 + 自动重验」）。
-// 业务：复用 /api/todo 做增删改查。useSWR(fetcher) 自动管缓存/重新校验/loading。
-//
-// ───── 从 Vue 转 React（服务端状态篇）─────
-//   • SWR 管的是「服务端状态」：接口数据 + 它的缓存/loading/重验。它和 redux/zustand/jotai（管「客户端状态」：表单、开关、本地计数器）是【不同层】，互补不替代。
-//   • Vue 对照：① SWR 有 Vue 移植版 `swrv`（API 一致）；② 更常见写法是 Pinia 里存接口数据 + 手写 refetch；
-//     ③ TanStack Query 有官方 `@tanstack/vue-query`（useQuery/useMutation 与 React 版一模一样）。
-//   • 心智：useSWR(key, fetcher) ≈ 把「请求 + 缓存 + loading」打包好，key 变了自动重拉；写操作后 mutate() 重新校验（≈ Vue 里手动 this.load() 再拉一次）。
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（轻量取数篇）· SWR
+// · Vue2 对照：axios + 手写 loading
+// · Vue3 对照：社区 swrv（SWR 的 Vue 版）
+// · React 对照：SWR = useSWR(key, fetcher)，更轻量，主打 stale-while-revalidate 自动重验
+// 📌 实战定位：SWR 属【常规业务常用·进阶】；比 React Query 轻，适合「拉个列表/详情」的简易取数场景。走 /api/todo。
+// 🧭 学习模式：🔧固定写法=const {data,error,isLoading}=useSWR('/api/todo',fetcher); mutate() 触发重拉；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 import { useState } from "react";
 import useSWR from "swr";
 
@@ -286,6 +285,23 @@ export default function SwrPage() {
           管接口 + zustand 管 UI」。 TanStack Query 有官方 Vue 版
           @tanstack/vue-query（API 完全一致）；SWR 有社区 Vue 版 swrv。
         </p>
+      </details>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">取数库</td><td className="px-2 py-1">axios</td><td className="px-2 py-1">swrv</td><td className="px-2 py-1">SWR / React Query</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">API</td><td className="px-2 py-1">手写</td><td className="px-2 py-1">useSWR 一致</td><td className="px-2 py-1">useSWR(key,fetcher)</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">重验策略</td><td className="px-2 py-1">手动</td><td className="px-2 py-1">stale-while-revalidate</td><td className="px-2 py-1">SWR（同名策略）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">写后刷新</td><td className="px-2 py-1">手动 refetch</td><td className="px-2 py-1">mutate()</td><td className="px-2 py-1">mutate()</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：SWR 比 React Query 更轻，useSWR(key,fetcher) 一行取数；本项目接 /api/todo，mutate() 即可重拉最新。</p>
       </details>
     </main>
   );
