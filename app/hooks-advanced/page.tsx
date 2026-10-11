@@ -11,30 +11,14 @@ import {
   type CSSProperties,
 } from 'react'
 
-/**
- * 进阶 Hooks 合集（搬运自 learning-demos）
- *  useTransition / useDeferredValue —— React 并发特性，保持 UI 响应
- *  useId —— 生成稳定唯一 id（表单 label 关联 / SSR 安全）
- *  useLayoutEffect —— 绘制前同步操作 DOM（测量/聚焦）
- *  useSyncExternalStore —— 订阅外部 store（window、第三方状态源）
- *
- * 学习模式（与 learn/react-query、learn/swr 对齐）：
- *   🔧 固定写法 = 该 hook 的标准用法（背下来即可）
- *   👉 = 练习点（已填好，可直接 npm run dev 看效果）
- *   各 hook 的「Vue2 / Vue3 / React」对比在页面【末尾】折叠区，不在代码中间。
- *
- * ───── 从 Vue 转 React（进阶 Hooks 篇）─────
- *   • ① useTransition / ② useDeferredValue 是 React 独有的「并发渲染」能力：把某些更新
- *     标记为低优先级、可中断，输入框等高优先级更新先走。Vue2 / Vue3 的响应式都是同步提交，
- *     【没有】并发可中断概念——同类问题在 Vue 里靠 watch + debounce、setTimeout 分块、Web Worker 解决。
- *   • ③ useId 解决「SSR 时服务端/客户端生成的 id 必须一致」（否则 hydration 告警）；
- *     Vue2 / Vue3 没有内建 id 原语，手写 :id / uuid，无 SSR 一致性保证。
- *   • ④ useLayoutEffect 是「浏览器绘制前同步执行 DOM 操作」，避免闪烁；Vue2 的 watch
- *     默认在「数据变→渲染前」触发（≈ pre），但 nextTick 其实是绘制后（microtask），
- *     真正的「绘制前同步」Vue 没有对应物。对应你文档第八节的 flush 时机。
- *   • ⑤ useSyncExternalStore 是「订阅外部可变源」的底层 API（subscribe + getSnapshot）；
- *     zustand / redux 都基于它。Vue 对应：事件总线 $on/$off、Vuex/Pinia 的 subscribe、watch。
- */
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（进阶 Hook 篇）· useTransition/useDeferredValue/useSyncExternalStore
+// · Vue2 对照：无直接对应（nextTick / 手动优化）
+// · Vue3 对照：有类似并发/过渡概念但 API 不同
+// · React 对照：并发特性 Hook：过渡更新（useTransition）、降级值（useDeferredValue）、订阅外部存储（useSyncExternalStore）
+// 📌 实战定位：进阶 Hook 属【了解即可·进阶】；性能与并发渲染优化用，日常 CRUD 少碰，看懂即可。
+// 🧭 学习模式：🔧固定写法=useTransition()(返回 [isPending,startTransition]); useDeferredValue(value); useSyncExternalStore(subscribe,getSnapshot); 👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 
 /* ---------- 1. useTransition：把耗时更新标记为“可中断” ---------- */
 function TransitionDemo() {
@@ -236,6 +220,23 @@ export default function HooksAdvancedPage() {
           ③ 是 SSR 友好的 id 原语；④ 对应「绘制前同步」（你文档第八节的 pre 时机）；
           ⑤ 是订阅外部 store 的底层 API，zustand / redux 都基于它。
         </p>
+      </details>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">过渡更新</td><td className="px-2 py-1">—</td><td className="px-2 py-1">—</td><td className="px-2 py-1">useTransition（标记低优更新）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">降级值</td><td className="px-2 py-1">—</td><td className="px-2 py-1">—</td><td className="px-2 py-1">useDeferredValue（保持响应）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">外部存储</td><td className="px-2 py-1">—</td><td className="px-2 py-1">—</td><td className="px-2 py-1">useSyncExternalStore（订阅 store）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">对标</td><td className="px-2 py-1">nextTick</td><td className="px-2 py-1">watch / effect</td><td className="px-2 py-1">并发 Hook</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：这三个 Hook 服务于并发渲染与性能，日常写业务较少用；理解「过渡/降级/外部订阅」即可，不必死记。</p>
       </details>
     </main>
   )
