@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（内置 Hook 篇）· useState/useEffect/useRef 等基础 Hook
+// · Vue2 对照：用 data / watch / $refs / 生命周期钩子
+// · Vue3 对照：用 ref / reactive / watch / onMounted
+// · React 对照：用 useState / useEffect / useRef 等 Hook（函数组件内调用）
+// 📌 实战定位：内置 Hook 属【常规业务常用】；useState（状态）+ useEffect（副作用）是 90% 页面的骨架。
+// 🧭 学习模式：🔧固定写法=const [x,setX]=useState(init)；useEffect(()=>{...},[deps])；👉=练习点已填；文末有对照。
+// ───────────────────────────────────────────────────────────
 "use client";
 
 // ============================================================
@@ -442,6 +450,23 @@ export default function HooksBasicsPage() {
       {/* 同形家族对照：useEffect / useImperativeHandle 与 ② useMemo 签名一致 */}
       <UseEffectDemo />
       <UseImperativeHandleDemo />
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">状态</td><td className="px-2 py-1">data(){return{}} / ref</td><td className="px-2 py-1">ref() / reactive()</td><td className="px-2 py-1">useState()</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">副作用/生命周期</td><td className="px-2 py-1">mounted / watch</td><td className="px-2 py-1">onMounted / watch</td><td className="px-2 py-1">useEffect(fn,[deps])</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">DOM 引用</td><td className="px-2 py-1">this.$refs.x</td><td className="px-2 py-1">ref(null) + template ref</td><td className="px-2 py-1">useRef(null)</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">派生值</td><td className="px-2 py-1">computed</td><td className="px-2 py-1">computed</td><td className="px-2 py-1">useMemo</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：Hook 把「状态/副作用/引用」拆成可组合函数；依赖数组 [deps] 决定 useEffect 何时跑，是和 Vue watch 最像的一块。</p>
+      </details>
     </main>
   );
 }
