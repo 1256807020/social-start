@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（起步骨架篇）· React 项目骨架与入口
+// · Vue2 对照：项目多靠 Vue CLI / webpack 模板，入口 main.js 挂到 #app
+// · Vue3 对照：Vite 模板，createApp(App).mount('#app')
+// · React 对照：Vite + ReactDOM.createRoot(#root).render(<App/>) 挂到 #root
+// 📌 实战定位：脚手架/运行环境属【了解即可】；不天天手写，但看懂「HTML→JS 入口→组件树」这条链路最关键。
+// 🧭 学习模式：🔧固定写法=createRoot + 组件树；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
@@ -277,6 +285,23 @@ export default function BasicDemo() {
           </ul>
         )}
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">项目脚手架</td><td className="px-2 py-1">Vue CLI / Vite 模板</td><td className="px-2 py-1">Vite + vue-ts template</td><td className="px-2 py-1">Vite + react-ts template</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">入口挂载</td><td className="px-2 py-1">new Vue({el:'#app'})</td><td className="px-2 py-1">createApp(App).mount('#app')</td><td className="px-2 py-1">createRoot(#root).render(&lt;App/&gt;)</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">根组件</td><td className="px-2 py-1">App.vue（单文件组件）</td><td className="px-2 py-1">App.vue（&lt;script setup&gt;）</td><td className="px-2 py-1">App.tsx（函数组件）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">模板语法</td><td className="px-2 py-1">template 里写 HTML</td><td className="px-2 py-1">template / JSX 二选一</td><td className="px-2 py-1">JSX（写在 .tsx，类 HTML）</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：React 没有 .vue 单文件组件，UI 用 JSX 写在 .tsx 里；入口从 #app 变成 #root，链路一致。</p>
+      </details>
     </main>
   )
 }
