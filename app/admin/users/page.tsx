@@ -1,18 +1,11 @@
-// ============================================================================
-// 用户管理页：react-hook-form + zod 做「带校验」的 CRUD（已连真实后端 /api/users）
-// ----------------------------------------------------------------------------
-// 这是本分支的主角。对比 admin-* 分支里“手写 if (!form.name) alert(...)”的朴素校验，
-// 这里用 RHF 接管表单状态，zod 接管校验规则，二者通过 zodResolver 接起来。
-// 数据不再放内存假库（lib/users-store.ts），而是走 lib/users-api.ts → 真实后端，
-// 刷新页面数据不丢（落在 data/users.json）。
-//
-// ───── 从 Vue 转 React（表单 + CRUD 篇）─────
-//   • Vue3 + vee-validate + Pinia：useForm({ validationSchema: toTypedSchema(userSchema) }) 接管表单，
-//     actions 里 await axios 增删改、再拉列表塞回 store —— 和本页的 RHF + users-api 一一对应。
-//   • Vue2 + Vuex：methods 里手写校验 + this.$store.dispatch('saveUser')；这里用 RHF 的 handleSubmit
-//     自动拦校验 + dispatch 换成直接调 users-api 的 async 函数。
-//   共同点：表单「声明式校验」+ 数据「异步拉/写」这两条主线完全一样，只是 API 名字不同。
-// ============================================================================
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（表单校验 CRUD 篇）· react-hook-form + Zod
+// · Vue2 对照：element-ui 表单 + 手写校验
+// · Vue3 对照：element-plus + async-validator / vee-validate
+// · React 对照：react-hook-form（非受控、性能好）+ zodResolver 接 Zod 校验，写整套 CRUD
+// 📌 实战定位：RHF + Zod 属【常规业务常用】；React 表单事实标准，非受控省重渲，校验交给 Zod。走 /api/users。
+// 🧭 学习模式：🔧固定写法=useForm({resolver:zodResolver(Schema)}); <form onSubmit={handleSubmit(onOk)}>; 增删改走 /api/users；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -239,6 +232,23 @@ export default function UsersPage() {
             </tr>
           </tbody>
         </table>
+      </details>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">表单库</td><td className="px-2 py-1">element-ui form</td><td className="px-2 py-1">element-plus form</td><td className="px-2 py-1">react-hook-form</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">校验</td><td className="px-2 py-1">rules / async-validator</td><td className="px-2 py-1">vee-validate + zod</td><td className="px-2 py-1">zodResolver(Schema)</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">受控性</td><td className="px-2 py-1">多受控</td><td className="px-2 py-1">多受控</td><td className="px-2 py-1">非受控（ref 取值，性能好）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">CRUD</td><td className="px-2 py-1">axios + 手写</td><td className="px-2 py-1">axios + 手写</td><td className="px-2 py-1">handleSubmit + /api/*</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：RHF 用 register/Controller 接管字段、非受控高性能；zodResolver 把 Zod schema 当校验器，本项目走 /api/users 真实接口。</p>
       </details>
     </div>
   );
