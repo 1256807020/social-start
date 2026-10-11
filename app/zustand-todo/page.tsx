@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（轻量状态管理篇）· Zustand
+// · Vue2 对照：Vuex / eventBus
+// · Vue3 对照：Pinia（最常用轻量方案）
+// · React 对照：Zustand（create 一个 store，组件内 hook 直接读/写，无 Provider 包裹）
+// 📌 实战定位：Zustand 属【常规业务常用】；React 全局状态的「首选轻量方案」，API 比 Redux 简洁太多。
+// 🧭 学习模式：🔧固定写法=create((set)=>({todos,add:(t)=>set(s=>({todos:[...]}))}))；组件内 const {todos,add}=useStore()；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 'use client'
 
 import { useState } from 'react'
@@ -172,6 +180,23 @@ export default function ZustandTodoPage() {
           重（见 redux-todo / redux-toolkit）。核心三步 ① 走通后，下一步 ② Zod 校验、③ Redux。
         </p>
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">全局方案</td><td className="px-2 py-1">Vuex</td><td className="px-2 py-1">Pinia</td><td className="px-2 py-1">Zustand / Redux</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">定义 store</td><td className="px-2 py-1">new Vuex.Store</td><td className="px-2 py-1">defineStore</td><td className="px-2 py-1">create((set)=>({...}))</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">读取</td><td className="px-2 py-1">mapState / this.$</td><td className="px-2 py-1">storeToRefs(store)</td><td className="px-2 py-1">useStore(s=&gt;s.x)</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">写入</td><td className="px-2 py-1">commit / dispatch</td><td className="px-2 py-1">action 直接改</td><td className="px-2 py-1">set(...) 直接改</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：Zustand 不用 reducer/action 样板，set 直接改；无 Provider，import 即用，最贴近 Pinia 的爽感。</p>
+      </details>
     </main>
   )
 }
