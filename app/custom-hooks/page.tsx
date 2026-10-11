@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（自定义 Hook 篇）· 抽可复用逻辑
+// · Vue2 对照：mixins / 复用 methods
+// · Vue3 对照：composables（useXxx 函数，内部用响应式 API）
+// · React 对照：自定义 Hook（useXxx 函数，内部用其他 Hook，返回状态/方法）
+// 📌 实战定位：自定义 Hook 属【常规业务常用】；把「状态+副作用」封成 useXxx，跨组件复用，等价于 Vue composables。
+// 🧭 学习模式：🔧固定写法=function useXxx(){ const [s,setS]=useState(); useEffect(...); return {s,setS} }；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 "use client";
 
 import { useEffect, useState } from "react";
@@ -184,6 +192,23 @@ const { data, isFetching, error } = useFetch(url)
 const { data, pending, error } = await useFetch(url)`}</code>
         </pre>
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">复用单元</td><td className="px-2 py-1">mixins / 工具函数</td><td className="px-2 py-1">composables（useXxx）</td><td className="px-2 py-1">自定义 Hook（useXxx）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">状态来源</td><td className="px-2 py-1">data / ref</td><td className="px-2 py-1">ref / reactive</td><td className="px-2 py-1">useState / useReducer</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">副作用</td><td className="px-2 py-1">watch / 生命周期</td><td className="px-2 py-1">watch / onMounted</td><td className="px-2 py-1">useEffect</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">调用规则</td><td className="px-2 py-1">选项式内 this</td><td className="px-2 py-1">setup 内直接调</td><td className="px-2 py-1">组件顶层调用（不嵌套条件）</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：自定义 Hook = 「用 Hook 写的函数」，本质和 Vue composable 一致；必须只在组件/其他 Hook 顶层调用。</p>
+      </details>
     </main>
   );
 }
