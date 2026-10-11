@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（组件与 JSX 篇）· 纯函数组件 + JSX
+// · Vue2 对照：单文件组件 .vue，template + script + style 三块
+// · Vue3 对照：<script setup> 写逻辑，template 写 UI
+// · React 对照：一个函数返回 JSX，UI 与逻辑同处 .tsx
+// 📌 实战定位：函数组件 + JSX 属【常规业务常用】；这是 React 的「零件」基本形态，必须熟。
+// 🧭 学习模式：🔧固定写法=function Comp(){return <div/>}；props 当参数；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 "use client";
 
 import { useEffect, useState } from "react";
@@ -96,6 +104,23 @@ export default function ReactBasicsPurePage() {
         <h2>不可变数据</h2>
         <ShopingList items={items} />
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">组件形态</td><td className="px-2 py-1">Vue 选项式 / SFC</td><td className="px-2 py-1">SFC + &lt;script setup&gt;</td><td className="px-2 py-1">函数组件 ()=&gt;JSX</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">UI 写法</td><td className="px-2 py-1">template（类 HTML）</td><td className="px-2 py-1">template / JSX</td><td className="px-2 py-1">JSX（需驼峰属性）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">条件渲染</td><td className="px-2 py-1">v-if</td><td className="px-2 py-1">v-if / v-show</td><td className="px-2 py-1">{cond &amp;&amp; &lt;X/&gt;} 或 三元</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">列表渲染</td><td className="px-2 py-1">v-for</td><td className="px-2 py-1">v-for</td><td className="px-2 py-1">{arr.map(x=&gt; &lt;li key/&gt;)}</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：React 一切皆函数；条件用 &amp;&amp;、列表用 map+key，没有 v-if/v-for 指令。</p>
+      </details>
     </main>
   );
 }
