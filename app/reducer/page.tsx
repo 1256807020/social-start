@@ -1,3 +1,11 @@
+// ───────────────────────────────────────────────────────────
+// 从 Vue 转 React（状态机篇）· useReducer
+// · Vue2 对照：复杂状态多在 data + methods 里手写
+// · Vue3 对照：复杂状态用 reactive + 自定义 action 函数
+// · React 对照：useReducer（(state,action)=>新 state 的纯函数 reducer）+ dispatch
+// 📌 实战定位：useReducer 属【常规业务常用】；多字段/多动作表单、复杂状态机首选，也是 Redux 的内置原语。
+// 🧭 学习模式：🔧固定写法=const [state,dispatch]=useReducer(reducer,init); dispatch({type:'ADD'})；👉=练习点已填；文末对照。
+// ───────────────────────────────────────────────────────────
 "use client";
 
 import { useReducer } from "react";
@@ -269,6 +277,23 @@ export default function ReducerPage() {
           dispatch，再学全局状态管理会非常顺。
         </p>
       </section>
+      <details className="mt-6 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 &amp; 本项目小结</summary>
+        <table className="mt-2 w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1">维度</th><th className="px-2 py-1">Vue2 (Options)</th><th className="px-2 py-1">Vue3 (Composition)</th><th className="px-2 py-1">React</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">状态更新</td><td className="px-2 py-1">this.xxx = ...</td><td className="px-2 py-1">state.x = ...（响应式）</td><td className="px-2 py-1">dispatch({type,payload})</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">变更逻辑</td><td className="px-2 py-1">methods / actions</td><td className="px-2 py-1">action 函数</td><td className="px-2 py-1">reducer(state,action) 纯函数</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">适用场景</td><td className="px-2 py-1">任意</td><td className="px-2 py-1">任意</td><td className="px-2 py-1">多动作/多字段聚合状态</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">演进</td><td className="px-2 py-1">→ Vuex</td><td className="px-2 py-1">→ Pinia</td><td className="px-2 py-1">→ Redux / Zustand 底层</td></tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-gray-500">📝 小结：reducer 是「纯函数 (state,action)=&gt;newState」，dispatch 触发；理解了它，Redux/Zustand 一通百通。</p>
+      </details>
     </main>
   );
 }
