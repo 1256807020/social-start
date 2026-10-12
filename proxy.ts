@@ -1,34 +1,43 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { isAuthEnabled, verifyToken } from './lib/auth'
+import createMiddleware from 'next-intl/middleware'
+import { routing } from './i18n/routing'
 
-const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+// 进阶鉴权：仅 /api/* 写操作生效
 const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
+const intlMiddleware = createMiddleware(routing)
+
 /**
- * 进阶鉴权（Next.js 16 Proxy 文件约定，仅 /api/* 生效，不干扰页面渲染与 SEO）。
- * - 未配置 ADMIN_TOKEN：完全透明，核心 CRUD 本地 / 公开开放。
- * - 已配置：写操作需正确 adminToken，读操作始终放行。
+ * Next.js 16 Proxy 文件（取代旧 middleware.ts，单一入口）。
+ * - 命中 /api/*：走进阶鉴权（未配置 ADMIN_TOKEN 透明放行，写操作需正确 adminToken）。
+ * - 其余（页面 / 语言路由）：走 next-intl 语言重定向（/ → /zh 等）。
  */
 export function proxy(req: NextRequest) {
-  // 未启用：透明放行，核心能力零负担
-  if (!isAuthEnabled()) return NextResponse.next()
+  const { pathname } = req.nextUrl
 
-  const method = req.method.toUpperCase()
-  // 只读请求放行（列表 / 详情 / 统计 / 利于 SEO 的公开读）
-  if (READ_METHODS.has(method)) return NextResponse.next()
+  // —— API 鉴权层 ——
+  if (pathname.startsWith('/api')) {
+    if (!isAuthEnabled()) return NextResponse.next()
 
-  // 写操作必须携带正确的 adminToken
-  if (!verifyToken(req)) {
-    return NextResponse.json(
-      { code: 40001, data: null, msg: '未授权：写操作需要正确的 adminToken' },
-      { status: 401 },
-    )
+    const method = req.method.toUpperCase()
+    if (READ_METHODS.has(method)) return NextResponse.next()
+
+    if (!verifyToken(req)) {
+      return NextResponse.json(
+        { code: 40001, data: null, msg: '未授权：写操作需要正确的 adminToken' },
+        { status: 401 },
+      )
+    }
+    return NextResponse.next()
   }
-  return NextResponse.next()
+
+  // —— 语言路由层（next-intl）——
+  return intlMiddleware(req)
 }
 
 export const config = {
-  // 仅匹配 /api 路由，页面（含 SSR/SEO）完全不受影响
-  matcher: ['/api/:path*'],
+  // 页面 / 语言路由 + API 鉴权，两条 matcher 合并
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)', '/api/:path*'],
 }
