@@ -3,7 +3,7 @@
 // · Vue2/Vue3 对照：Vue 没有「Server Action」概念，写操作要么前端 axios 调后端接口，要么 Nuxt server route；
 // · React/Next 对照：Server Actions 是「跑在服务器上的异步函数」，<form action> 直接绑，写库后 revalidateTag 刷新，无需手写 API 路由。
 // 📌 实战定位：Next 全栈写操作【了解即可·进阶】，小表单/后台写操作很香；复杂场景仍可用 Route Handler + 客户端 fetch。
-// 🧭 学习模式：🔧固定写法='use server' + revalidateTag；👉=练习点（已全部补全，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// 🧭 学习模式：🔧固定写法='use server' + updateTag（Next16 中 Server Action 立即失效用 updateTag；revalidateTag 第二参 profile 已变必填）；👉=练习点（已全部补全，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
 // ───────────────────────────────────────────────────────────
 import { headers } from 'next/headers'
 import TodoForm from './todo-form'
@@ -50,7 +50,7 @@ export default async function ServerActionsPage() {
       <ul>
         <li>✅ 在 action 里 try/catch，失败返回错误并由表单 useActionState 提示（createTodo / updateTodo 均含）</li>
         <li>✅ SubmitButton 用 useFormStatus 在按钮显示「提交中…」</li>
-        <li>✅ getTodos 的 fetch 打 tags:['todos']，各 action 用 revalidateTag 精确失效（非整页）</li>
+        <li>✅ getTodos 的 fetch 打 tags:['todos']，各 action 用 updateTag 精确失效（非整页；Next16 中 revalidateTag 需显式 profile，Server Action 推荐 updateTag）</li>
         <li>✅ 增删改查齐全：createTodo / updateTodo / toggleTodo / deleteTodo</li>
       </ul>
       <details className="mt-6 rounded border p-3 text-sm">

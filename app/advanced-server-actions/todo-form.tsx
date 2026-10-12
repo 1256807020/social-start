@@ -1,8 +1,9 @@
 'use client'
 
 import { useActionState } from 'react'
-import { createTodo, type ActionState } from './actions'
+import { createTodo } from './actions'
 import SubmitButton from './submit-button'
+import type { ActionState } from './types'
 
 export default function TodoForm() {
   // 练习点①：useActionState 捕获 action 返回的 {ok, error}，失败时表单直接提示

@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { headers } from 'next/headers'
 import type { ActionState } from './types'
 
@@ -37,7 +37,7 @@ export async function createTodo(_prev: ActionState, formData: FormData): Promis
     })
     const st = await handle(res)
     if (!st.ok) return st
-    revalidateTag('todos') // 练习点③：按标签精确失效，而非整页
+    updateTag('todos') // 练习点③：按标签精确失效，而非整页
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || '创建异常' }
@@ -57,7 +57,7 @@ export async function updateTodo(id: number, formData: FormData): Promise<Action
     })
     const st = await handle(res)
     if (!st.ok) return st
-    revalidateTag('todos')
+    updateTag('todos')
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || '更新异常' }
@@ -73,7 +73,7 @@ export async function toggleTodo(id: number, done: boolean) {
       headers: hd,
       body: JSON.stringify({ done }),
     })
-    revalidateTag('todos')
+    updateTag('todos')
   } catch {
     // toggle 失败不易在行内提示，可在此埋点
   }
@@ -84,7 +84,7 @@ export async function deleteTodo(id: number) {
   try {
     const { base, hd } = await buildBase()
     await fetch(`${base}/api/todo/${id}`, { method: 'DELETE', headers: hd })
-    revalidateTag('todos')
+    updateTag('todos')
   } catch {
     // 同上
   }

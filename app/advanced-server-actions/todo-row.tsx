@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useActionState } from 'react'
-import { updateTodo, deleteTodo, toggleTodo, type ActionState } from './actions'
+import { updateTodo, deleteTodo, toggleTodo } from './actions'
 import SubmitButton from './submit-button'
-import type { Todo } from './types'
+import type { ActionState, Todo } from './types'
 
 export default function TodoRow({ todo }: { todo: Todo }) {
   const [editing, setEditing] = useState(false)
