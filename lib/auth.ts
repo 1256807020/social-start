@@ -6,6 +6,8 @@ import Credentials from 'next-auth/providers/credentials'
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // 生产务必用环境变量 AUTH_SECRET；这里给开发兜底值
   secret: process.env.AUTH_SECRET || 'dev-secret-change-me',
+  // Next 16 下 Auth.js 跑在 proxy 层之后，需显式信任 host，否则报 Missing trustHost
+  trustHost: true,
   session: { strategy: 'jwt' },
   providers: [
     Credentials({

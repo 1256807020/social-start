@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { isAuthEnabled, verifyToken } from './lib/auth'
+import { isAuthEnabled, verifyToken } from './lib/admin-token'
 
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
@@ -11,6 +11,12 @@ const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
  * - 已配置：写操作需正确 adminToken，读操作始终放行。
  */
 export function proxy(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  // 公开端点（登录 / 会话 / 回调等 Auth.js 路由）不走 adminToken 鉴权，
+  // 否则配了 ADMIN_TOKEN 后登录 POST 会被自己的 proxy 拦截成 401
+  if (pathname.startsWith('/api/auth')) return NextResponse.next()
+
   // 未启用：透明放行，核心能力零负担
   if (!isAuthEnabled()) return NextResponse.next()
 
