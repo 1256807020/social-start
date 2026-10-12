@@ -3,45 +3,62 @@
 // · Vue2/Vue3 对照：Popmotion / Mo.js 都框架无关，Vue 里同样 onMounted 初始化；用法与 React 一致。
 // · React 对照：Popmotion 做手势驱动的位移（animate({from,to,onUpdate})）；Mo.js 做点击粒子爆发（本例）。
 // 📌 实战定位：高互动创意特效【了解即可·进阶】；Popmotion 处理拖拽/滑动物理动效，Mo.js 生成粒子/形状变形，做品牌创意站。
-// 🧭 学习模式：🔧固定写法=import {animate} from 'popmotion'; animate({from,to,onUpdate:v=>el.style.transform}); import mojs from 'mo-js'; new mojs.Burst({...}).replay()；👉=练习点已填；文末对照。
+// 🧭 学习模式：🔧固定写法=import {animate} from 'popmotion'; animate({from,to,onUpdate:v=>el.style.transform}); Mo.js 依赖 window，须在 useEffect 内 import('mo-js') 动态取 default 再 new Mojs.Burst({...}).replay()；👉=练习点已填；文末对照。
 // ───────────────────────────────────────────────────────────
 'use client'
 
 import { useEffect, useRef } from 'react'
 import { animate } from 'popmotion'
-// @ts-ignore mo-js 无官方类型声明，按需加 @types 或忽略
-import mojs from 'mo-js'
+// @ts-ignore mo-js 无官方类型声明，且它只在浏览器可用（模块顶层访问 window），
+// 故不写顶层 import，改在 useEffect 内 import('mo-js') 动态取 default，避免 SSR 阶段 window is not defined。
 // 练习前在本分支运行：pnpm add popmotion mo-js
+
+// mo-js 无官方类型，这里补最小可用类型（避免 any）
+type MojsBurst = { tune: (o: Record<string, number>) => MojsBurst; replay: () => void }
+type MojsModule = { Burst: new (opts: Record<string, unknown>) => MojsBurst }
 
 export default function PopmotionMojsPage() {
   const ballRef = useRef<HTMLDivElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const burstRef = useRef<mojs.Burst | null>(null)
+  const burstRef = useRef<MojsBurst | null>(null)
 
   useEffect(() => {
-    // 👉 Mo.js：点击容器任意处迸发粒子
-    const burst = new mojs.Burst({
-      left: 0,
-      top: 0,
-      radius: { 0: 120 },
-      count: 12,
-      children: {
-        shape: 'circle',
-        fill: ['#48f', '#f48', '#4f8'],
-        radius: 10,
-        duration: 1000,
-      },
-    })
-    burstRef.current = burst
+    // 👉 Mo.js 浏览器专属：服务端无 window，必须客户端动态 import（否则 SSR 报 window is not defined）
+    let burst: MojsBurst | null = null
+    let cleanup: (() => void) | null = null
 
-    const wrap = wrapRef.current
-    const onClick = (e: MouseEvent) => {
-      const r = wrap?.getBoundingClientRect()
-      if (!r) return
-      burst.tune({ x: e.clientX - r.left, y: e.clientY - r.top }).replay() // 👉 在点击位置播放
+    // @ts-ignore mo-js 无类型声明（动态 import，仅浏览器执行）
+    import('mo-js').then((mod) => {
+      const Mojs = mod.default as unknown as MojsModule
+      burst = new Mojs.Burst({
+        left: 0,
+        top: 0,
+        radius: { 0: 120 },
+        count: 12,
+        children: {
+          shape: 'circle',
+          fill: ['#48f', '#f48', '#4f8'],
+          radius: 10,
+          duration: 1000,
+        },
+      })
+      burstRef.current = burst
+
+      const wrap = wrapRef.current
+      const onClick = (e: MouseEvent) => {
+        const r = wrap?.getBoundingClientRect()
+        if (!r) return
+        burst?.tune({ x: e.clientX - r.left, y: e.clientY - r.top }).replay() // 👉 在点击位置播放
+      }
+      wrap?.addEventListener('click', onClick)
+      cleanup = () => wrap?.removeEventListener('click', onClick)
+    })
+
+    return () => {
+      cleanup?.()
+      burst = null
+      burstRef.current = null
     }
-    wrap?.addEventListener('click', onClick)
-    return () => wrap?.removeEventListener('click', onClick)
   }, [])
 
   // 👉 Popmotion：手势/按钮驱动小球位移（物理缓动）
