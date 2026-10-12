@@ -1,47 +1,57 @@
 // ───────────────────────────────────────────────────────────
 // 从 Vue 转 React（全栈篇）· Next Server Actions
 // · Vue2/Vue3 对照：Vue 没有「Server Action」概念，写操作要么前端 axios 调后端接口，要么 Nuxt server route；
-// · React/Next 对照：Server Actions 是「跑在服务器上的异步函数」，&lt;form action&gt; 直接绑，写库后 revalidatePath 刷新，无需手写 API 路由。
+// · React/Next 对照：Server Actions 是「跑在服务器上的异步函数」，<form action> 直接绑，写库后 revalidateTag 刷新，无需手写 API 路由。
 // 📌 实战定位：Next 全栈写操作【了解即可·进阶】，小表单/后台写操作很香；复杂场景仍可用 Route Handler + 客户端 fetch。
-// 🧭 学习模式：🔧固定写法='use server' + revalidatePath；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// 🧭 学习模式：🔧固定写法='use server' + revalidateTag；👉=练习点（已全部补全，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
 // ───────────────────────────────────────────────────────────
-// 服务端组件（无需 'use client'）即可定义并调用 Server Action
-import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
+import TodoForm from './todo-form'
+import TodoRow from './todo-row'
+import type { Todo } from './types'
 
-/**
- * 高阶：Server Actions（搬运自进阶大纲 advanced-server-actions）
- *  Server Actions 是 Next 的服务端异步函数，可被 <form action={...}> 或客户端调用，
- *  无需手写 API 路由即可完成「提交 → 改数据 → 刷新」闭环。
- * 每个 👉 是给你手敲的练习点。
- */
-
-// 👉 手敲：定义一个 Server Action（函数体内首行写 'use server'）
-async function createTodo(formData: FormData) {
-  'use server'
-  // 👉 1. 读表单：const title = formData.get('title')
-  // 👉 2. 写数据（如 POST 到本仓库 /api/todo，或用 lib/crud 直接落 json-db）
-  // 👉 3. 失效缓存：revalidatePath('/advanced-server-actions') 让页面重渲染
-  console.log('submit', Object.fromEntries(formData))
+// 服务端读列表：revalidateTag('todos') 重渲染时重新拉取，新提交即时可见。
+// 关键：fetch 打 next.tags:['todos']，mutation 侧用 revalidateTag 精确失效（练习点③）。
+async function getTodos(): Promise<Todo[]> {
+  const h = await headers()
+  const host = h.get('host') ?? 'localhost:4000'
+  const proto = h.get('x-forwarded-proto') ?? 'http'
+  const base = `${proto}://${host}`
+  const res = await fetch(`${base}/api/todo?pageSize=20&sort=-id`, {
+    next: { tags: ['todos'] },
+  })
+  const j = await res.json()
+  return (j.data as Todo[]) || []
 }
 
-export default function ServerActionsPage() {
+export default async function ServerActionsPage() {
+  const todos = await getTodos()
   return (
     <main style={{ maxWidth: 720, margin: '40px auto', fontFamily: 'system-ui' }}>
       <h1>Server Actions</h1>
       <p>
-        下面的 form 直接把数据交给上面的 server action，不经过前端 fetch / API 路由。
+        下面整套 CRUD 直接把数据交给 Server Action，不经过前端 fetch / API 路由（底层仍走本仓库 /api/todo 真实接口）。
       </p>
-      {/* 👉 把 action 绑到 form：<form action={createTodo}> */}
-      <form action={createTodo}>
-        <input name="title" placeholder="待办标题" />
-        <button type="submit">提交</button>
-      </form>
 
-      <h2>进阶练习</h2>
+      {/* 增：客户端表单 + useActionState 错误提示 */}
+      <TodoForm />
+
+      {/* 查 + 改 + 删：服务端读列表，每行一个客户端组件处理 */}
+      <ul className="mt-4 space-y-1 text-sm">
+        {todos.map((t: Todo) => (
+          <TodoRow key={t.id} todo={t} />
+        ))}
+        {todos.length === 0 && (
+          <li className="text-gray-400">暂无待办（提交后会在这里出现）</li>
+        )}
+      </ul>
+
+      <h2>进阶练习（已补全）</h2>
       <ul>
-        <li>👉 在 action 里增加 try/catch，失败时返回错误并让表单提示</li>
-        <li>👉 用 <code>useFormStatus</code> 在客户端按钮显示「提交中…」</li>
-        <li>👉 用 <code>revalidateTag</code> 按标签精确失效，而非整页</li>
+        <li>✅ 在 action 里 try/catch，失败返回错误并由表单 useActionState 提示（createTodo / updateTodo 均含）</li>
+        <li>✅ SubmitButton 用 useFormStatus 在按钮显示「提交中…」</li>
+        <li>✅ getTodos 的 fetch 打 tags:['todos']，各 action 用 revalidateTag 精确失效（非整页）</li>
+        <li>✅ 增删改查齐全：createTodo / updateTodo / toggleTodo / deleteTodo</li>
       </ul>
       <details className="mt-6 rounded border p-3 text-sm">
         <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
@@ -57,12 +67,13 @@ export default function ServerActionsPage() {
             <tr className="border-b"><td className="px-2 py-1">写操作入口</td><td className="px-2 py-1">axios 调后端 / Nuxt server route</td><td className="px-2 py-1">Server Action（'use server'）</td></tr>
             <tr className="border-b"><td className="px-2 py-1">落地数据</td><td className="px-2 py-1">后端路由写库</td><td className="px-2 py-1">action 内直接写（本仓库可 POST /api/todo）</td></tr>
             <tr className="border-b"><td className="px-2 py-1">刷新页面</td><td className="px-2 py-1">前端重新拉接口</td><td className="px-2 py-1">revalidatePath / revalidateTag</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">提交态</td><td className="px-2 py-1">自己管 loading</td><td className="px-2 py-1">useFormStatus 自动 pending</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">错误回显</td><td className="px-2 py-1">catch 后 setState</td><td className="px-2 py-1">useActionState 捕获返回</td></tr>
             <tr className="border-b"><td className="px-2 py-1">适用</td><td className="px-2 py-1">通用业务接口</td><td className="px-2 py-1">小表单 / 后台写操作</td></tr>
           </tbody>
         </table>
         <p className="mt-2 text-gray-500">📝 小结：Server Actions 省掉手写 API 路由，表单直绑；复杂写操作仍可用 Route Handler + 客户端 fetch。本项目按铁律统一走 /api 真实接口。</p>
       </details>
-
     </main>
   )
 }
