@@ -139,7 +139,7 @@ export default function React19FormActionsPage() {
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b"><td className="px-2 py-1">提交入口</td><td className="px-2 py-1">@submit + methods</td><td className="px-2 py-1">@submit + async</td><td className="px-2 py-1">&lt;form action={fn}&gt;</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">提交入口</td><td className="px-2 py-1">@submit + methods</td><td className="px-2 py-1">@submit + async</td><td className="px-2 py-1">{'<form action={fn}>'}</td></tr>
             <tr className="border-b"><td className="px-2 py-1">pending 态</td><td className="px-2 py-1">this.loading</td><td className="px-2 py-1">ref(loading)</td><td className="px-2 py-1">useFormStatus / isPending</td></tr>
             <tr className="border-b"><td className="px-2 py-1">错误/结果</td><td className="px-2 py-1">手写</td><td className="px-2 py-1">ref(err)</td><td className="px-2 py-1">useActionState</td></tr>
             <tr className="border-b"><td className="px-2 py-1">收集字段</td><td className="px-2 py-1">v-model</td><td className="px-2 py-1">v-model</td><td className="px-2 py-1">FormData 自动收集</td></tr>
