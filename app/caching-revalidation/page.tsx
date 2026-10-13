@@ -3,10 +3,11 @@
 // · Vue2/Vue3 对照：Vue 无内置 HTTP 缓存；Nuxt useFetch 自带缓存与重新验证（与 Next 思路接近）；
 // · React/Next 对照：fetch 的 force-cache / next:{revalidate} / no-store / tags + revalidateTag 四种档位，本例直接读 /api/todo 演示。
 // 📌 实战定位：缓存/重验【了解即可·进阶】；调性能与新鲜度必点，业务接口常用 no-store 保实时。
-// 🧭 学习模式：🔧固定写法=next:{tags} + revalidateTag 让缓存失效；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// 🧭 学习模式：🔧固定写法=next:{tags} + updateTag 让缓存失效（Next16 revalidateTag 第二参 profile 必填，Server Action 改用 updateTag）；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
 // 注：本例全程走真实 /api/todo 接口（带 cache 策略），未直读 json，符合铁律。
 // ───────────────────────────────────────────────────────────
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
+import { headers } from "next/headers";
 
 /**
  * 高阶 · Next.js 缓存与重新验证（caching & revalidation）
@@ -15,32 +16,44 @@ import { revalidateTag } from "next/cache";
  * 适配点（本仓库 = Next 16.3 + 自带 /api JSON 引擎，无 json-server / Prisma）：
  *   - 数据源改为 social-start 自带的 GET /api/todo（零外部依赖，无需起 json-server）
  *   - 原函数级缓存 unstable_cache(getProducts) 在 Next 16 已移除，官方替代是 'use cache' 指令；
- *     本页用 fetch + next:{ tags } + revalidateTag 等价实现（更稳定，无需开 Cache Components 也能编译运行）
+ *     本页用 fetch + next:{ tags } + updateTag 等价实现（Server Action 内精确失效；更稳定，无需开 Cache Components 也能编译运行）
  */
 
 type Todo = { id: number | string; title: string; done?: boolean };
 
+// 服务端内网调用：从请求 host 推导绝对 base，避免硬编码端口，换端口/部署也能跑
+async function buildBase() {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:4000";
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  return `${proto}://${host}`;
+}
+
 // ① 默认/强制缓存：同样 URL 的结果按 URL 缓存
 async function getForceCache(): Promise<Todo[]> {
-  const res = await fetch("http://localhost:4000/api/todo", { cache: "force-cache" });
+  const base = await buildBase();
+  const res = await fetch(`${base}/api/todo`, { cache: "force-cache" });
   return (await res.json()).data;
 }
 
 // ② 定时重新验证：允许短暂陈旧，每 10s 回源一次（ISR 思路）
 async function getRevalidate(): Promise<Todo[]> {
-  const res = await fetch("http://localhost:4000/api/todo", { next: { revalidate: 10 } });
+  const base = await buildBase();
+  const res = await fetch(`${base}/api/todo`, { next: { revalidate: 10 } });
   return (await res.json()).data;
 }
 
 // ③ 完全不缓存：每次请求都打后端（私有 / 实时数据）
 async function getNoStore(): Promise<Todo[]> {
-  const res = await fetch("http://localhost:4000/api/todo", { cache: "no-store" });
+  const base = await buildBase();
+  const res = await fetch(`${base}/api/todo`, { cache: "no-store" });
   return (await res.json()).data;
 }
 
 // ④ 打 tag 的读取：配合 revalidateTag 做“重新验证”
 async function getTagged(): Promise<Todo[]> {
-  const res = await fetch("http://localhost:4000/api/todo", {
+  const base = await buildBase();
+  const res = await fetch(`${base}/api/todo`, {
     cache: "force-cache",
     next: { tags: ["todos"] },
   });
@@ -50,7 +63,8 @@ async function getTagged(): Promise<Todo[]> {
 // Server Action：让打了 'todos' tag 的缓存失效 —— 这正是 caching-revalidation 的核心
 async function revalidateTodos() {
   "use server";
-  revalidateTag("todos");
+  // Next 16：Server Action 内立即失效用 updateTag（单参）；revalidateTag 第二参 profile 已变必填
+  updateTag("todos");
 }
 
 export default async function CachingRevalidationPage() {
@@ -88,7 +102,7 @@ export default async function CachingRevalidationPage() {
         <p className="text-sm">条数：{tagged.length}</p>
         <form action={revalidateTodos}>
           <button className="rounded bg-blue-600 px-3 py-1 text-white" type="submit">
-            重新验证（revalidateTag('todos')）
+            重新验证（updateTag('todos')）
           </button>
         </form>
         <p className="mt-1 text-xs text-gray-500">
@@ -104,8 +118,8 @@ export default async function CachingRevalidationPage() {
             <code>'use cache'</code> 指令（需开启 Cache Components）。
           </li>
           <li>
-            本页改用 <code>fetch(..., {"{ next: { tags } }"})</code> + <code>revalidateTag</code>
-            ，无需改 next.config 即可编译运行。
+            本页改用 <code>fetch(..., {"{ next: { tags } }"})</code> + <code>updateTag</code>
+            （Server Action 内精确失效），无需改 next.config 即可编译运行。
           </li>
           <li>
             想看到 force-cache 真的“跨请求不回源”，在 next.config.mjs 开{" "}
@@ -123,7 +137,7 @@ export default async function CachingRevalidationPage() {
             <tr className="border-b"><td className="px-2 py-1">缓存档位</td><td className="px-2 py-1">useFetch 缓存</td><td className="px-2 py-1">force-cache / revalidate / no-store</td></tr>
             <tr className="border-b"><td className="px-2 py-1">定时刷新</td><td className="px-2 py-1">revalidate</td><td className="px-2 py-1">next: { revalidate }</td></tr>
             <tr className="border-b"><td className="px-2 py-1">强制实时</td><td className="px-2 py-1">手关缓存</td><td className="px-2 py-1">no-store</td></tr>
-            <tr className="border-b"><td className="px-2 py-1">精确失效</td><td className="px-2 py-1">Nuxt 类似</td><td className="px-2 py-1">tags + revalidateTag</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">精确失效</td><td className="px-2 py-1">Nuxt 类似</td><td className="px-2 py-1">tags + updateTag（revalidateTag 第二参必填）</td></tr>
           </tbody>
         </table>
         <p className="mt-2 text-gray-500">📝 小结：四档缓存；业务接口常用 no-store 保实时，打 tag + revalidateTag 做精确失效。本项目数据统一走 /api 真实接口。</p>
