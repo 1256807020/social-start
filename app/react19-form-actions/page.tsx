@@ -8,7 +8,8 @@
 // ───────────────────────────────────────────────────────────
 'use client'
 
-import { useActionState, useFormStatus, useState, useRef } from 'react'
+import { useActionState, useState, useRef } from 'react'
+import { useFormStatus } from 'react-dom'
 
 /**
  * React 19 表单 Actions 全家桶（搬运自 ReactAdm03）
