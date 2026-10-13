@@ -8,7 +8,7 @@
 // ───────────────────────────────────────────────────────────
 'use client'
 
-import { useActionState, useFormStatus } from 'react'
+import { useActionState, useFormStatus, useState, useRef } from 'react'
 
 /**
  * React 19 表单 Actions 全家桶（搬运自 ReactAdm03）
@@ -73,17 +73,40 @@ function ProfileForm() {
 
 /* ---------- 3. Actions API：form action 直接传函数（非受控） ---------- */
 function AddTodoForm() {
-  // 👉 手敲：action 接收 FormData，调用后端 /api/todo 创建
+  // 用本地 state 显示提交结果、用 ref 在成功后清空输入框（仍是非受控 form action，教学点不变）
+  const [msg, setMsg] = useState('')
+  const formRef = useRef<HTMLFormElement>(null)
   return (
     <form
+      ref={formRef}
       action={async (formData: FormData) => {
-        const title = formData.get('title')
-        // 👉 await fetch('/api/todo', { method:'POST', body: JSON.stringify({title}) })
-        console.log('新增：', title)
+        // 👉 action 接收 FormData，调用后端 /api/todo 真实创建（POST 体即记录本身 {title}）
+        const title = String(formData.get('title') ?? '').trim()
+        if (!title) {
+          setMsg('标题不能为空')
+          return
+        }
+        try {
+          const res = await fetch('/api/todo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title }),
+          })
+          const j = await res.json()
+          if (j.code === 0) {
+            setMsg(`已新增（真实 /api/todo）：${title}`)
+            formRef.current?.reset()
+          } else {
+            setMsg(`新增失败：${j.msg ?? '未知错误'}`)
+          }
+        } catch (e) {
+          setMsg(`请求出错：${(e as Error).message}`)
+        }
       }}
     >
       <input name="title" placeholder="待办标题" />
       <button type="submit">添加</button>
+      {msg && <p style={{ color: '#2563eb' }}>{msg}</p>}
     </form>
   )
 }
@@ -122,7 +145,7 @@ export default function React19FormActionsPage() {
             <tr className="border-b"><td className="px-2 py-1">收集字段</td><td className="px-2 py-1">v-model</td><td className="px-2 py-1">v-model</td><td className="px-2 py-1">FormData 自动收集</td></tr>
           </tbody>
         </table>
-        <p className="mt-2 text-gray-500">📝 小结：React19 把表单 pending/error/重置内建化；老项目用 react-hook-form 同样顺手。AddTodoForm 里已演示 action 调 /api/todo 新增。</p>
+        <p className="mt-2 text-gray-500">📝 小结：React19 把表单 pending/error/重置内建化；老项目用 react-hook-form 同样顺手。AddTodoForm 里 action 已真正 POST /api/todo 创建记录（本地未设 ADMIN_TOKEN 时写操作开放，无需 token）。</p>
       </details>
 
     </main>
