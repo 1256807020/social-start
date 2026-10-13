@@ -27,14 +27,32 @@ function Chat() {
     (current, newMsg: Msg) => [...current, newMsg],
   )
 
-  async function send(text: string) {
+  // 👉 表单 action 本身就是 transition，addOptimistic 在其中调用合法（避免 “optimistic update outside a transition” 报错）
+  async function send(formData: FormData) {
+    const text = String(formData.get('text') ?? '').trim()
+    if (!text) return
     const tmp: Msg = { id: Date.now(), text, sending: true }
     addOptimistic(tmp) // 👉 立即乐观插入到 UI
-    // 👉 await 模拟请求：
-    //   成功 → setMessages([...messages, { ...tmp, sending: false }])
-    //   失败 → 不更新 setMessages，useOptimistic 自动回滚到 messages
-    await new Promise((r) => setTimeout(r, 800))
-    setMessages((prev) => [...prev, { ...tmp, sending: false }])
+    // 👉 调真实 /api/todo 创建（POST 体即 {title}）；成功才写入真实 messages，失败不写 → useOptimistic 自动回滚
+    try {
+      const res = await fetch('/api/todo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: text }),
+      })
+      const j = await res.json()
+      if (j.code === 0) {
+        const data = j.data as { id?: number } | null
+        setMessages((prev) => [
+          ...prev,
+          { id: data?.id ?? tmp.id, text, sending: false },
+        ])
+      } else {
+        console.error('发送失败：', j.msg)
+      }
+    } catch (e) {
+      console.error('请求出错：', (e as Error).message)
+    }
   }
 
   return (
@@ -47,16 +65,26 @@ function Chat() {
           </li>
         ))}
       </ul>
-      <button onClick={() => send('你好')}>发送</button>
+      <form action={send}>
+        <input name="text" placeholder="说点什么" defaultValue="你好" />
+        <button type="submit">发送</button>
+      </form>
     </div>
   )
 }
 
 /* ---------- 2. use()：在组件里直接读 Promise ---------- */
 function fetchUser(id: number): Promise<{ name: string }> {
-  return new Promise((resolve) =>
-    setTimeout(() => resolve({ name: `用户${id}` }), 800),
-  )
+  // 👉 用真实 /api/todo 演示 use(promise) 读 Promise（SSR 阶段无 window，兜底返回占位，避免相对 URL 在服务端 fetch 崩溃）
+  if (typeof window === 'undefined') {
+    return Promise.resolve({ name: `用户${id}` })
+  }
+  return fetch('/api/todo')
+    .then((r) => r.json())
+    .then((j) => {
+      const list = (j.data as { title: string }[] | undefined) ?? []
+      return { name: list[0]?.title ?? `用户${id}` }
+    })
 }
 
 function User({ promise }: { promise: Promise<{ name: string }> }) {
@@ -105,7 +133,7 @@ export default function React19AsyncUiPage() {
             <tr className="border-b"><td className="px-2 py-1">依赖</td><td className="px-2 py-1">手写</td><td className="px-2 py-1">手写</td><td className="px-2 py-1">Suspense + ErrorBoundary</td></tr>
           </tbody>
         </table>
-        <p className="mt-2 text-gray-500">📝 小结：React19 把乐观更新/异步读取内建；Vue 靠手写 ref + catch 回滚实现同类效果。</p>
+        <p className="mt-2 text-gray-500">📝 小结：React19 把乐观更新/异步读取内建；Vue 靠手写 ref + catch 回滚实现同类效果。本例 Chat 的乐观插入已接真实 POST /api/todo（失败自动回滚），use() 读 Promise 也走真实 GET /api/todo（SSR 阶段用 typeof window 兜底，避免相对 URL 在服务端 fetch 崩溃）。</p>
       </details>
 
     </main>
