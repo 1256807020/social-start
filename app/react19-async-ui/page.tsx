@@ -65,7 +65,9 @@ function User({ promise }: { promise: Promise<{ name: string }> }) {
 }
 
 function UserSection() {
-  const promise = fetchUser(1)
+  // 👉 用 useState 惰性初始化把 promise「固定」下来：use(promise) 要求 promise 身份稳定，
+  // 若每次渲染都 new 一个新 promise，会陷入「suspend→resolve→又 new→再 suspend」的死循环，永远停在 fallback。
+  const [promise] = useState(() => fetchUser(1))
   return (
     <Suspense fallback={<p>加载中…</p>}>
       <User promise={promise} />
