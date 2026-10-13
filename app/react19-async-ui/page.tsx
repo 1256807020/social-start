@@ -35,7 +35,7 @@ function Chat() {
     addOptimistic(tmp) // 👉 立即乐观插入到 UI
     // 👉 调真实 /api/todo 创建（POST 体即 {title}）；成功才写入真实 messages，失败不写 → useOptimistic 自动回滚
     try {
-      const res = await fetch('/api/todo', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: text }),
@@ -75,11 +75,11 @@ function Chat() {
 
 /* ---------- 2. use()：在组件里直接读 Promise ---------- */
 function fetchUser(id: number): Promise<{ name: string }> {
-  // 👉 用真实 /api/todo 演示 use(promise) 读 Promise（SSR 阶段无 window，兜底返回占位，避免相对 URL 在服务端 fetch 崩溃）
+  // 👉 用真实 /api/user 演示 use(promise) 读 Promise（专属资源库，基座自动建；GET 缺失库返回 []，SSR 阶段无 window 兜底返回占位避免相对 URL 在服务端 fetch 崩溃）
   if (typeof window === 'undefined') {
     return Promise.resolve({ name: `用户${id}` })
   }
-  return fetch('/api/todo')
+  return fetch('/api/user')
     .then((r) => r.json())
     .then((j) => {
       const list = (j.data as { title: string }[] | undefined) ?? []
@@ -133,7 +133,7 @@ export default function React19AsyncUiPage() {
             <tr className="border-b"><td className="px-2 py-1">依赖</td><td className="px-2 py-1">手写</td><td className="px-2 py-1">手写</td><td className="px-2 py-1">Suspense + ErrorBoundary</td></tr>
           </tbody>
         </table>
-        <p className="mt-2 text-gray-500">📝 小结：React19 把乐观更新/异步读取内建；Vue 靠手写 ref + catch 回滚实现同类效果。本例 Chat 的乐观插入已接真实 POST /api/todo（失败自动回滚），use() 读 Promise 也走真实 GET /api/todo（SSR 阶段用 typeof window 兜底，避免相对 URL 在服务端 fetch 崩溃）。</p>
+        <p className="mt-2 text-gray-500">📝 小结：React19 把乐观更新/异步读取内建；Vue 靠手写 ref + catch 回滚实现同类效果。本例 Chat 的乐观插入已接真实 POST /api/chat（专属聊天库，基座自动建，失败自动回滚），use() 读 Promise 也走真实 GET /api/user（专属用户库，GET 缺失库返回 []，SSR 阶段用 typeof window 兜底避免相对 URL 在服务端 fetch 崩溃）——均不再复用 /api/todo，展示「任意资源名自动建库」基座。</p>
       </details>
 
     </main>
