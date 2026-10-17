@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react'
 
 type DropItem = { id: number; label: string; order: number }
 
+// 👉 Omit<DropItem,'id'> = { label; order }：种子数据不含 id，交给后端 genId 自动生成
 const DEFAULT_ITEMS: Omit<DropItem, 'id'>[] = [
   { label: 'React', order: 0 },
   { label: 'Vue', order: 1 },
@@ -59,13 +60,13 @@ export default function DragDropPage() {
   function handleDrop(target: number) {
     if (dragIndex === null || dragIndex === target) return
     const from = dragIndex
-    const next = [...items]
+    const next = [...items] // 本地内存副本重排：splice 先删后插，只动副本，不删后端数据
     const [moved] = next.splice(from, 1)
     next.splice(target, 0, moved)
     // 重新分配 order（新下标即新顺序）
     const reordered = next.map((it, idx) => ({ ...it, order: idx }))
     setItems(reordered) // 乐观更新 UI
-    // 👉 持久化：batch-update 一次性批量更新各条 order 字段（利用基座批量能力）
+    // 👉 持久化：batch-update 增量合并更新各条 order（只改顺序，记录不删、id 不变，非删除后替换）
     fetch('/api/drop/batch-update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
