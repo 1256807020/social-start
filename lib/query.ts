@@ -19,6 +19,7 @@ const RESERVED = new Set([
   'childrenKey',
   'confirm',
   'adminToken',
+  'populate', // 关联查询：由路由层 populateRecords 处理，不能当字段过滤条件（否则整表被过滤空）
   '_t',
 ])
 
