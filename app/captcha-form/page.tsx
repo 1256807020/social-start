@@ -29,7 +29,7 @@ export default function CaptchaFormPage() {
   const [logs, setLogs] = useState<string[]>([])
 
   const log = (m: string) =>
-    setLogs((p) => [`${new Date().toLocaleTimeString()}  ${m}`, ...p].slice(0, 20)])
+    setLogs((p) => [`${new Date().toLocaleTimeString()}  ${m}`, ...p].slice(0, 20))
 
   // ── 核心写法 ①：拉取验证码（GET /api/captcha）──
   // 返回 { captchaId, image }，image 是 SVG 的 data URI，直接 <img src={image}> 显示
@@ -158,7 +158,7 @@ export default function CaptchaFormPage() {
             <b>核心（取验证码）</b>：<code>GET /api/captcha</code> → 解包 <code>j.data</code> 得到
             <code>{'{ captchaId, image }'}</code>。<code>image</code> 是 SVG 的
             <strong>data URI</strong>（形如 <code>data:image/svg+xml;base64,...</code>），直接
-            <code>&lt;img src={image}&gt;</code> 显示，<strong>不用自己读 FileReader / 不依赖额外静态文件</strong>。
+            <code>{'<img src={image}>'}</code> 显示，<strong>不用自己读 FileReader / 不依赖额外静态文件</strong>。
           </li>
           <li>
             <b>核心（校验）</b>：把<strong>当前这张图的 captchaId</strong>（和用户输入的 code）一起
