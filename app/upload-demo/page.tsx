@@ -13,8 +13,9 @@ import { useEffect, useState } from 'react'
  * 学习模式：🔧 固定写法（<input type=file> + FormData + POST 上传；多文件 append 多次；返回 url 直接用）、
  *          👉 练习点（图片路由 vs 通用文件路由的 url 前缀差异 /img 与 /uploads；占位图 placeholder 免真传）。
  *
- * 数据：图片走基座 image 模块（/api/image/*，存 data/uploads，url 前缀 /img）；
- *       通用文件走 file 模块（/api/file/*，存 public/uploads，url 前缀 /uploads）。均为基座内置，非自建 <resource>。
+ * 数据：图片走基座 image 模块（/api/image/*，存 data/uploads，url 前缀 /img，仅接受图片格式，应用层托管）；
+ *       通用文件走 file 模块（/api/file/*，存 public/uploads，url 前缀 /uploads，不限格式，Next 静态直出）。
+ *       一句话记：图片 = 内部托管（受控 / 可随库换存储后端）、文件 = 对外公开（直链 / 任意格式）。均为基座内置，非自建 <resource>。
  */
 
 type UploadedItem = {
@@ -26,6 +27,10 @@ type UploadedItem = {
   ext?: string
 }
 
+// 两条上传路由怎么选（详情见页面底部「图片 vs 通用文件」说明）：
+//  - img* ：图片专用，落 data/uploads，url 前缀 /img，仅接受图片格式（jpg/png/gif/webp/svg/bmp/ico/avif），受应用层托管
+//  - file*：通用文件，落 public/uploads，url 前缀 /uploads，不限格式，由 Next 公开目录静态直出（对外公开）
+//  删除各自 DELETE /api/image/:name、DELETE /api/file/:name；列表各自 GET /api/image/list、GET /api/file/list
 const API = {
   imgUpload: '/api/image/upload',
   imgList: '/api/image/list',
@@ -237,10 +242,19 @@ export default function UploadDemoPage() {
             基座返回 <code>url</code>，图片直接 <code>{'<img src={url}>'}</code>、文件直接 <code>{'<a href={url}>'}</code>。
           </li>
           <li>
-            <b>图片 vs 通用文件</b>：两条独立路由，存盘位置与 url 前缀不同——
-            图片 <code>/api/image/upload</code> → 存 <code>data/uploads</code>，url 前缀 <code>/img</code>；
-            文件 <code>/api/file/upload</code> → 存 <code>public/uploads</code>，url 前缀 <code>/uploads</code>。
-            删都是 <code>DELETE /api/image/:name</code> / <code>/api/file/:name</code>。
+            <b>图片 vs 通用文件（别选错）</b>：两条独立路由，存盘位置、url 前缀、格式限制都不同——
+            <ul>
+              <li><b>图片</b> <code>POST /api/image/upload</code> → 存 <code>data/uploads</code>，url <code>/img/&lt;name&gt;</code>。
+                落在 <code>data/</code>（与 JSON 库同目录，<b>不在 Next 公开目录</b>），必须借应用路由 <code>/img/:name</code> 访问，
+                属「<b>应用托管的内部图片存储</b>」；<b>只接受图片格式</b>（jpg/png/gif/webp/svg/bmp/ico/avif），传其它格式直接 400。
+                适合头像 / 配图 / 缩略图等要受应用管控、未来可随库一起换存储后端的图片。</li>
+              <li><b>通用文件</b> <code>POST /api/file/upload</code> → 存 <code>public/uploads</code>，url <code>/uploads/&lt;name&gt;</code>。
+                落在 Next 的 <code>public/</code> 公开静态目录，文件以 <code>/uploads/&lt;name&gt;</code> <b>直接静态可访问、无应用层</b>，属「<b>对外公开静态资源</b>」；
+                <b>不限格式</b>（pdf/doc/zip/视频均收）。适合需直接外链 / 下载的任意文件。</li>
+            </ul>
+            <b>误用提醒</b>：要直接外链下载的文档别走 <code>/api/image</code>（会被格式拦截，且不在 public 无法直链）；
+            私密 / 受控图片别走 <code>/api/file</code>（进了 public 就完全公开、无应用层管控）。
+            删除都是 <code>DELETE /api/image/:name</code> / <code>/api/file/:name</code>。
           </li>
           <li>
             <b>多文件 = 1 次请求</b>：把所有 File 都 append 到同一个 <code>file</code> 字段，基座 <code>form.getAll('file')</code>
