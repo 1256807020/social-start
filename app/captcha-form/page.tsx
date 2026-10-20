@@ -33,11 +33,14 @@ export default function CaptchaFormPage() {
 
   // ── 核心写法 ①：拉取验证码（GET /api/captcha）──
   // 返回 { captchaId, image }，image 是 SVG 的 data URI，直接 <img src={image}> 显示
-  const refresh = async () => {
+  // keepResult=true 用于「校验后自动刷新」：保留上一次校验结果让用户看到成败，不再清空
+  const refresh = async (keepResult = false) => {
     setLoading(true)
     setError(null)
-    setResult(null)
-    setMsg('')
+    if (!keepResult) {
+      setResult(null)
+      setMsg('')
+    }
     try {
       log(`GET /api/captcha  ×1`)
       const r = await fetch('/api/captcha', { cache: 'no-store' })
@@ -79,8 +82,8 @@ export default function CaptchaFormPage() {
       const ok = !!(j.data && j.data.success)
       setResult(ok ? 'ok' : 'fail')
       setMsg(ok ? '校验通过 ✅' : '验证码错误 ❌')
-      // 一次性：无论成败都刷新一张新的（旧 captchaId 已作废）
-      await refresh()
+      // 一次性：无论成败都刷新一张新的（旧 captchaId 已作废）；保留本次校验结果让用户看到成败
+      await refresh(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -119,7 +122,7 @@ export default function CaptchaFormPage() {
               className="cf-input"
               placeholder="请输入上方验证码"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => { setCode(e.target.value); setResult(null); setMsg('') }}
               onKeyDown={(e) => e.key === 'Enter' && verify()}
             />
             <button className="cf-primary" onClick={verify} disabled={loading || !captcha}>
