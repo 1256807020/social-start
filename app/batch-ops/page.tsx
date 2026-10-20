@@ -6,13 +6,16 @@ import { useEffect, useState } from 'react'
  * 从 Vue 转 React（批量操作 batch-ops 篇）
  * Vue2 对照：早年批量要么后端写个批量接口（/@batch 收数组），要么前端循环 await 多条；
  *            这里基座的约定式 CRUD 天然支持「批量」——POST 直接收数组 = 一次请求插多条，
- *            而「批量改 / 批量删」没有集合级接口，只能前端循环调 [id] 路由（N 次单条）。
+ *            而且<strong>基座也提供集合级 batch-delete / batch-update 接口</strong>（1 次请求按 id 批量改删）。
  *
- * 实战定位：🔧 必会 —— 检验基座「批量新增」与「没有集合级批量改删」这一现实约束，
- *           并体会「真·批量 POST（1 次请求）」与「逐条循环（N 次请求）」的请求数差异。
+ * 实战定位：🔧 必会 —— 检验基座「批量新增」+「集合级批量改删」能力，并对比两种批量写法：
+ *   · 集合级（推荐）：POST /api/:resource/batch-delete {ids:[...]} 或 batch-update [{id,...}] —— 1 次请求
+ *   · 朴素写法：前端循环调 [id] 路由（PATCH/DELETE /api/:resource/:id）—— N 次单条请求
+ *   两者都能用，差别在请求数（网络往返）。日志面板直观显示。
  *
- * 学习模式：🔧 固定写法（POST 数组=批量新增；DELETE ?confirm=1=清空集合；[id] 路由做单条改删）、
- *          👉 练习点（理解「批量 = 一次收数组」vs「批量改删 = 前端循环 N 次」）。
+ * 学习模式：🔧 固定写法（POST 数组=批量新增；DELETE ?confirm=1=清空集合；
+ *          batch-delete/batch-update=集合级批量改删；[id] 路由=单条改删）、
+ *          👉 练习点（理解「集合级 1 次」vs「循环 N 次」的请求数差异）。
  *
  * 数据文件：本例用 tasks 集合（data/tasks.json）。不预建——首次 POST 时基座自动建库（约定式）。
  */
@@ -36,7 +39,7 @@ export default function BatchOpsPage() {
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set()) // 勾选的 id 集合
   const [newTitle, setNewTitle] = useState('') // 单条新增的输入框
-  // 请求日志：把「每一次 fetch」都记下来，直观对比「批量 POST=1 次」vs「批量删改=N 次」
+  // 请求日志：把「每一次 fetch」都记下来，直观对比「集合级 1 次」vs「循环 N 次」
   const [logs, setLogs] = useState<string[]>([])
 
   // 记一条请求日志（带时间戳，保留最近 20 条）
@@ -120,18 +123,46 @@ export default function BatchOpsPage() {
     }
   }
 
-  // ④ 批量删除选中：基座「没有集合级批量删除」→ 对每条逐条调 [id] 路由（N 次单条请求）
-  //    ⚠️ 这正是和「批量新增」最直观的对比：新增能一次 POST 数组，删除却只能循环 N 次。
-  const batchDelete = async () => {
+  // ── 批量删除：两种写法对照 ──
+
+  // ④a 集合级（推荐）：POST /api/tasks/batch-delete，body {ids:[...]} —— 1 次请求删多条
+  //    ⚠️ 这是基座提供的「集合级批量删」接口，和批量新增一样是 1 次请求完成。
+  const batchDeleteColl = async () => {
     const ids = [...selected]
     if (!ids.length) return
     if (!confirm(`确定删除选中的 ${ids.length} 条？`)) return
     setLoading(true)
     setError(null)
     try {
+      log(`POST /api/${TASKS}/batch-delete  {ids:[${ids.join(',')}]}  ×1（集合级）`)
+      const r = await fetch(`/api/${TASKS}/batch-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      const j = await r.json()
+      if (j.code !== 0) throw new Error(j.msg || '批量删除失败')
+      setSelected(new Set())
+      await loadTasks()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ④b 朴素写法：前端循环调 [id] 路由（DELETE /api/tasks/:id）—— N 次单条请求
+  //    ⚠️ 功能完全等价，只是请求数 = 选中条数。本法不依赖集合级接口，任何有 [id] 路由的资源都能用。
+  const batchDeleteLoop = async () => {
+    const ids = [...selected]
+    if (!ids.length) return
+    if (!confirm(`确定删除选中的 ${ids.length} 条？（循环 [id] 朴素写法）`)) return
+    setLoading(true)
+    setError(null)
+    try {
       await Promise.all(
         ids.map(async (id) => {
-          log(`DELETE /api/${TASKS}/${id}  ×1`)
+          log(`DELETE /api/${TASKS}/${id}  ×1（循环）`)
           const r = await fetch(`/api/${TASKS}/${id}`, { method: 'DELETE' })
           const j = await r.json()
           if (j.code !== 0) throw new Error(`删除 ${id} 失败：${j.msg}`)
@@ -146,8 +177,34 @@ export default function BatchOpsPage() {
     }
   }
 
-  // ⑤ 批量标记完成：同样没有集合级批量改 → 逐条 PATCH [id]（N 次单条请求）
-  const batchDone = async () => {
+  // ── 批量标记完成：两种写法对照 ──
+
+  // ⑤a 集合级（推荐）：POST /api/tasks/batch-update，body [{id, done:true}, ...] —— 1 次请求改多条
+  const batchDoneColl = async () => {
+    const ids = [...selected]
+    if (!ids.length) return
+    setLoading(true)
+    setError(null)
+    try {
+      log(`POST /api/${TASKS}/batch-update  [{ids.map(() => '{id,done}').join(',')}]  ×1（集合级）`)
+      const r = await fetch(`/api/${TASKS}/batch-update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ids.map((id) => ({ id: Number(id), done: true }))),
+      })
+      const j = await r.json()
+      if (j.code !== 0) throw new Error(j.msg || '批量更新失败')
+      setSelected(new Set())
+      await loadTasks()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ⑤b 朴素写法：前端循环 PATCH [id]（PATCH /api/tasks/:id {done:true}）—— N 次单条请求
+  const batchDoneLoop = async () => {
     const ids = [...selected]
     if (!ids.length) return
     setLoading(true)
@@ -155,7 +212,7 @@ export default function BatchOpsPage() {
     try {
       await Promise.all(
         ids.map(async (id) => {
-          log(`PATCH /api/${TASKS}/${id}  {done:true}  ×1`)
+          log(`PATCH /api/${TASKS}/${id}  {done:true}  ×1（循环）`)
           const r = await fetch(`/api/${TASKS}/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -192,8 +249,10 @@ export default function BatchOpsPage() {
       <h1>📦 批量操作 · Batch Ops Demo</h1>
       <p className="bo-sub">
         检验基座「批量」能力：<strong>批量新增</strong>靠 <code>POST</code> 收数组（1 次请求插多条）；
-        但<strong>批量改 / 批量删</strong>没有集合级接口，只能前端循环调 <code>[id]</code> 路由（N 次单条）。
-        勾选若干行再点下方按钮，看右侧「请求日志」体会请求数差异。所有请求走 <code>/api/*</code>。
+        <strong>批量改 / 批量删</strong>基座也提供了集合级接口
+        <code>batch-delete</code> / <code>batch-update</code>（1 次请求按 id 批量完成）。
+        下方同时给出「集合级（1 次）」和「循环 <code>[id]</code>（N 次）」两种写法，勾选若干行点按钮，
+        看右侧「请求日志」体会请求数差异。所有请求走 <code>/api/*</code>。
       </p>
 
       {/* 写操作栏 */}
@@ -204,12 +263,27 @@ export default function BatchOpsPage() {
         <button className="bo-ghost" onClick={clearAll}>
           清空集合
         </button>
-        <span className="bo-sep" />
-        <button className="bo-ghost" onClick={batchDelete} disabled={!selected.size}>
-          删除选中（{selected.size}）
+      </div>
+
+      {/* 批量删除：两种写法对照 */}
+      <div className="bo-row">
+        <span className="bo-row-label">批量删除（选中 {selected.size}）：</span>
+        <button className="bo-primary" onClick={batchDeleteColl} disabled={!selected.size}>
+          集合级 batch-delete（1 次）
         </button>
-        <button className="bo-ghost" onClick={batchDone} disabled={!selected.size}>
-          标记完成（{selected.size}）
+        <button className="bo-ghost" onClick={batchDeleteLoop} disabled={!selected.size}>
+          循环 [id]（N 次）
+        </button>
+      </div>
+
+      {/* 批量标记完成：两种写法对照 */}
+      <div className="bo-row">
+        <span className="bo-row-label">标记完成（选中 {selected.size}）：</span>
+        <button className="bo-primary" onClick={batchDoneColl} disabled={!selected.size}>
+          集合级 batch-update（1 次）
+        </button>
+        <button className="bo-ghost" onClick={batchDoneLoop} disabled={!selected.size}>
+          循环 [id]（N 次）
         </button>
       </div>
 
@@ -292,17 +366,22 @@ export default function BatchOpsPage() {
             <code>app/api/[resource]/route.ts</code> 注释）。所以<strong>批量新增只要 1 次请求</strong>。
           </li>
           <li>
-            <b>核心（没有集合级批量改删）</b>：基座只有「集合级」的 <code>POST</code>（批量新增）和
-            <code>DELETE ?confirm=1</code>（清空整个集合）。<strong>按条件批量改 / 批量删不存在</strong>，
-            必须前端拿着勾选的 id 循环调 <code>PATCH/DELETE /api/&lt;resource&gt;/:id</code>——
-            这就是「批量改删 = N 次单条请求」。
+            <b>核心（集合级批量改删）</b>：基座<strong>提供</strong>两个集合级接口（都在 <code>basic</code>，所有分支可用）：
+            <code>POST /api/&lt;resource&gt;/batch-delete</code>（body <code>{'{ids:[...]}'}</code> 或 <code>?ids=1,2</code>）
+            和 <code>POST /api/&lt;resource&gt;/batch-update</code>（body <code>[{'{id,...}'}]</code>）。
+            两者都是<strong>1 次请求</strong>完成批量改删——比逐条循环省网络往返。
           </li>
           <li>
-            <b>对比要点</b>：点「批量新增 5 条」→ 日志只有 <code>POST ×1</code>；勾 3 行点「删除选中」→ 日志出现
-            <code>DELETE /:id ×3</code>。这就是真·批量 vs 逐条循环的区别（请求数 = 网络往返数）。
+            <b>朴素写法（循环 [id]）</b>：没有集合级接口时也能用——前端拿着勾选的 id 循环调
+            <code>PATCH/DELETE /api/&lt;resource&gt;/:id</code>。功能等价，但<strong>请求数 = 选中条数（N 次）</strong>。
+            本例两种都给出按钮，点一下看日志差异。
           </li>
           <li>
-            <b>外壳（UI）</b>：勾选 + 全选 + 操作按钮 + 请求日志面板。换成任意框架，核心不变。
+            <b>对比要点</b>：勾 3 行点「集合级 batch-delete」→ 日志只有 <code>POST /batch-delete ×1</code>；
+            点「循环 [id]」→ 日志出现 <code>DELETE /:id ×3</code>。这就是「集合级 1 次」vs「逐条循环 N 次」的区别。
+          </li>
+          <li>
+            <b>外壳（UI）</b>：勾选 + 全选 + 两种写法的操作按钮 + 请求日志面板。换成任意框架，核心不变。
           </li>
           <li>
             <b>真实接口请求</b>：全部走 <code>/api/*</code>，绝不直接读 <code>data/*.json</code>；
@@ -326,12 +405,12 @@ export default function BatchOpsPage() {
             <tr>
               <td>批量删除</td>
               <td>后端收 id 数组一次删</td>
-              <td>前端循环调 [id] 路由，N 次请求</td>
+              <td>集合级 batch-delete（1 次）或循环 [id]（N 次）</td>
             </tr>
             <tr>
               <td>批量改</td>
               <td>后端收 id 数组一次改</td>
-              <td>前端循环 PATCH [id]，N 次请求</td>
+              <td>集合级 batch-update（1 次）或循环 PATCH [id]（N 次）</td>
             </tr>
           </tbody>
         </table>
@@ -350,11 +429,13 @@ const css = `
   animation: bo-loadbar .9s linear infinite; }
 @keyframes bo-loadbar { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 .bo-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 14px; }
-.bo-sep { width: 1px; height: 22px; background: #e5e7eb; margin: 0 2px; }
+.bo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 14px; }
+.bo-row-label { color: #374151; font-weight: 600; }
 .bo-hint { color: #6b7280; font-size: 13px; }
 .bo-ghost { padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; }
 .bo-ghost:disabled { opacity: .4; cursor: not-allowed; }
 .bo-primary { padding: 6px 14px; border: none; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; }
+.bo-primary:disabled { opacity: .4; cursor: not-allowed; }
 .bo-create { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 14px; }
 .bo-create input { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 8px; }
 .bo-error { background: #fef2f2; color: #b91c1c; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
