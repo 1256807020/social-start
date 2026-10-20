@@ -234,7 +234,7 @@ export default function UploadDemoPage() {
             <code>const fd = new FormData(); fd.append('file', f)</code>（多文件就 append 多次）→
             <code>fetch(endpoint, {'{ method:"POST", body: fd }'})</code>。
             <strong>不要手动设 Content-Type</strong>（浏览器发 multipart 时会自动带 boundary）。
-            基座返回 <code>url</code>，图片直接 <code>&lt;img src={url}&gt;</code>、文件直接 <code>&lt;a href={url}&gt;</code>。
+            基座返回 <code>url</code>，图片直接 <code>{'<img src={url}>'}</code>、文件直接 <code>{'<a href={url}>'}</code>。
           </li>
           <li>
             <b>图片 vs 通用文件</b>：两条独立路由，存盘位置与 url 前缀不同——
