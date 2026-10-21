@@ -41,7 +41,7 @@ import {
  *   min     : 数值字段，可逗号分隔多个 → 产出列 min_字段
  *   max     : 数值字段，可逗号分隔多个 → 产出列 max_字段
  *
- * 分组前过滤（聚合会复用查询引擎 applyQuery，仅「非保留参数」生效）：
+ * 分组前过滤（聚合复用 applyFilter 做字段过滤，仅「非保留参数」生效；不分页）：
  *   · 字段等值      ?groupBy=role&status=active      → 只统计 status=active
  *   · 范围操作符     ?groupBy=role&age_gte=18         (支持 _gte/_lte/_gt/_lt)
  *   · 多值/模糊/不等 ?groupBy=role&tag_in=a,b         (支持 _in/_nin/_like/_ne)
@@ -54,7 +54,7 @@ import {
  *       { role:"admin",  count:3, sum_amount:900,  avg_amount:300 },
  *       { role:"editor", count:7, sum_amount:1400, avg_amount:200 },
  *     ]
- *   无 groupBy 时：data: [ { count:10, sum_amount:2300, avg_amount:230 } ]
+ *   无 groupBy 时：data: [ { count:记录总数, sum_amount:2300, avg_amount:230 } ]
  *
  * 关键命名规则：指标列名是「前缀_字段」（sum_amount 而非 amount）。
  *   所以页面里 metricCols = 自动抠出 groupBy 键与 count 之外的所有列。
@@ -66,6 +66,7 @@ type AggRow = Record<string, unknown>
 
 export default function DashboardPage() {
   const [collections, setCollections] = useState<string[]>([])
+  const [fields, setFields] = useState<string[]>([])
   const [resource, setResource] = useState('users')
   const [groupBy, setGroupBy] = useState('role')
   const [sumField, setSumField] = useState('')
@@ -96,6 +97,31 @@ export default function DashboardPage() {
       alive = false
     }
   }, [])
+
+  // 🔧 嗅探当前集合有哪些字段：取一批记录并「合并全部 key」。
+  // 注意不能只看第一条（schema-less：每条记录字段可不一致，如 todo 有些才有 done）。
+  // 目的：避免填了不存在的字段（如 todo 没有 role）导致所有记录被归到 undefined 一组。
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      try {
+        const r = await fetch(`/api/${encodeURIComponent(resource)}?pageSize=200`, {
+          cache: 'no-store',
+        })
+        const j = await r.json()
+        if (!alive) return
+        const list: Record<string, unknown>[] = Array.isArray(j.data) ? j.data : []
+        const keys = new Set<string>()
+        list.forEach((row) => Object.keys(row || {}).forEach((k) => keys.add(k)))
+        setFields(Array.from(keys))
+      } catch {
+        if (alive) setFields([])
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [resource])
 
   // 🔧 useCallback：记忆化聚合请求，依赖变化时才重建函数引用
   const run = useCallback(
@@ -149,6 +175,13 @@ export default function DashboardPage() {
   // （sum_*/avg_*/min_*/max_*）。列名不固定，所以这里动态抠出来渲染表头/单元格。
   const metricCols = rows.length ? Object.keys(rows[0]).filter((k) => k !== groupBy && k !== 'count') : []
 
+  // 分组值友好化：基座把缺失/空值 String(...) 后得到 "undefined"/"null"，这里统一显示为「（空）」。
+  const groupLabel = (r: AggRow): string => {
+    const v = r[groupBy]
+    if (v === undefined || v === null || v === 'undefined' || v === 'null' || v === '') return '（空）'
+    return String(v)
+  }
+
   return (
     <main className="mx-auto max-w-[960px] p-6">
       <h1 className="text-2xl font-semibold">📊 聚合统计仪表盘 · Dashboard</h1>
@@ -190,6 +223,31 @@ export default function DashboardPage() {
           />
         </Label>
       </div>
+
+      {/* 可用字段：点一下即可填入 groupBy，避免手填不存在的字段（如 todo 没有 role） */}
+      {fields.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">可用字段（点击填入 groupBy）：</span>
+          {fields.map((f) => (
+            <Button
+              key={f}
+              variant={f === groupBy ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setGroupBy(f)}
+            >
+              {f}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {/* 分组字段不存在时提前告警，否则所有记录会被归到同一个「（空）」组 */}
+      {fields.length > 0 && groupBy && !fields.includes(groupBy) && (
+        <div className="mb-3 rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-400">
+          当前集合「{resource}」没有「{groupBy}」字段，所有记录会被归到「（空）」一组。
+          可用字段：{fields.join(' / ')}
+        </div>
+      )}
 
       <div className="mb-3 flex flex-wrap items-center gap-2.5">
         <span className="text-sm text-muted-foreground">数值指标（可选，需数值字段）：</span>
@@ -242,7 +300,7 @@ export default function DashboardPage() {
 
           <div className="mb-4 space-y-2">
             {rows.map((r, i) => {
-              const key = String(r[groupBy] ?? '—')
+              const key = groupLabel(r)
               const count = Number(r.count) || 0
               const pct = maxCount ? Math.round((count / maxCount) * 100) : 0
               return (
@@ -273,7 +331,7 @@ export default function DashboardPage() {
             <TableBody>
               {rows.map((r, i) => (
                 <TableRow key={i}>
-                  <TableCell>{String(r[groupBy] ?? '—')}</TableCell>
+                  <TableCell>{groupLabel(r)}</TableCell>
                   <TableCell>{String(r.count)}</TableCell>
                   {metricCols.map((c) => (
                     <TableCell key={c}>
