@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 /**
  * 从 Vue 转 React（文件上传 upload 篇）
@@ -16,6 +18,9 @@ import { useEffect, useState } from 'react'
  * 数据：图片走基座 image 模块（/api/image/*，存 data/uploads，url 前缀 /img，仅接受图片格式，应用层托管）；
  *       通用文件走 file 模块（/api/file/*，存 public/uploads，url 前缀 /uploads，不限格式，Next 静态直出）。
  *       一句话记：图片 = 内部托管（受控 / 可随库换存储后端）、文件 = 对外公开（直链 / 任意格式）。均为基座内置，非自建 <resource>。
+ *
+ * 样式：已改为 Tailwind 工具类 + shadcn 组件（Button/Input），设计令牌驱动、暗色自适应；
+ *       原 <style>{css}</style> 字符串写法已移除（全局污染 / 硬编码 hex / 暗色失效）。
  */
 
 type UploadedItem = {
@@ -123,115 +128,154 @@ export default function UploadDemoPage() {
 
   const phUrl = API.placeholder(phSize, phText)
 
+  const fileInputClass =
+    'block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-primary-foreground hover:file:bg-primary/90'
+
   return (
-    <main className="ud-wrap">
-      <style>{css}</style>
-      {loading && <div className="ud-loading-bar" aria-hidden />}
-      <h1>📤 文件 / 图片上传 · Upload Demo</h1>
-      <p className="ud-sub">
-        检验基座「文件 / 图片上传」能力：选文件 → <code>FormData.append('file', f)</code> →
-        <code>POST /api/image/upload</code>（图片）或 <code>/api/file/upload</code>（通用文件），
-        返回 <code>url</code> 直接 <code>&lt;img src&gt;</code> / <code>&lt;a href&gt;</code> 即可，前端不用自己读 FileReader。
-        右侧「请求日志」看上传 = 1 次 POST（多文件也是 1 次并集）。
+    <main className="mx-auto max-w-[1000px] p-6">
+      {loading && (
+        <div className="fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden">
+          <div className="h-full w-1/3 animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+        </div>
+      )}
+      <h1 className="text-2xl font-semibold">📤 文件 / 图片上传 · Upload Demo</h1>
+      <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+        检验基座「文件 / 图片上传」能力：选文件 → <code className="cf-code">FormData.append('file', f)</code> →
+        <code className="cf-code">POST /api/image/upload</code>（图片）或{' '}
+        <code className="cf-code">/api/file/upload</code>（通用文件）， 返回{' '}
+        <code className="cf-code">url</code> 直接{' '}
+        <code className="cf-code">{'<img src>'}</code> / <code className="cf-code">{'<a href>'}</code> 即可，前端不用自己读
+        FileReader。 右侧「请求日志」看上传 = 1 次 POST（多文件也是 1 次并集）。
       </p>
 
-      <div className="ud-grid">
-        <div className="ud-left">
+      <div className="grid grid-cols-1 gap-4 min-[760px]:grid-cols-[1fr_320px]">
+        <div>
           {/* 图片上传 */}
-          <div className="ud-card">
-            <div className="ud-card-h">🖼️ 图片上传（POST /api/image/upload）</div>
+          <div className="mb-3 rounded-xl border bg-card p-3">
+            <div className="mb-2 text-sm font-semibold">🖼️ 图片上传（POST /api/image/upload）</div>
             <input
               type="file"
               accept="image/*"
               multiple
+              className={fileInputClass}
               onChange={(e) => {
                 if (e.target.files) upload(API.imgUpload, e.target.files, '图片')
                 e.currentTarget.value = '' // 允许重复选同一文件
               }}
             />
-            <div className="ud-hint">多选 = 1 次请求上传多张；返回 url 前缀 <code>/img</code></div>
-            <div className="ud-thumbs">
+            <div className="my-1.5 text-sm text-muted-foreground">
+              多选 = 1 次请求上传多张；返回 url 前缀 <code className="cf-code">/img</code>
+            </div>
+            <div className="mt-2 grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2.5">
               {images.map((it) => (
-                <div className="ud-thumb" key={it.name}>
+                <div className="overflow-hidden rounded-lg border bg-background" key={it.name}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imgUrl(it)} alt={it.original || it.name} />
-                  <div className="ud-thumb-bar">
-                    <span title={it.original || it.name}>{it.original || it.name}</span>
-                    <button className="ud-del" onClick={() => del(it.name, '图片')}>
+                  <img src={imgUrl(it)} alt={it.original || it.name} className="block h-[90px] w-full object-cover" />
+                  <div className="flex items-center justify-between gap-1.5 p-1.5 text-xs">
+                    <span className="truncate" title={it.original || it.name}>
+                      {it.original || it.name}
+                    </span>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-6 px-2 py-0 text-xs"
+                      onClick={() => del(it.name, '图片')}
+                    >
                       删
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
-              {!images.length && <div className="ud-empty">还没有图片，选几张上传试试</div>}
+              {!images.length && (
+                <div className="text-sm text-muted-foreground">还没有图片，选几张上传试试</div>
+              )}
             </div>
           </div>
 
           {/* 通用文件上传 */}
-          <div className="ud-card">
-            <div className="ud-card-h">📎 通用文件上传（POST /api/file/upload）</div>
+          <div className="mb-3 rounded-xl border bg-card p-3">
+            <div className="mb-2 text-sm font-semibold">📎 通用文件上传（POST /api/file/upload）</div>
             <input
               type="file"
               multiple
+              className={fileInputClass}
               onChange={(e) => {
                 if (e.target.files) upload(API.fileUpload, e.target.files, '文件')
                 e.currentTarget.value = ''
               }}
             />
-            <div className="ud-hint">任意格式；返回 url 前缀 <code>/uploads</code></div>
-            <ul className="ud-filelist">
+            <div className="my-1.5 text-sm text-muted-foreground">
+              任意格式；返回 url 前缀 <code className="cf-code">/uploads</code>
+            </div>
+            <ul className="mt-2 space-y-1.5">
               {files.map((it) => (
-                <li key={it.name}>
-                  <a href={fileUrl(it)} target="_blank" rel="noreferrer">
+                <li key={it.name} className="flex items-center gap-2 border-b border-border py-1.5 text-sm">
+                  <a
+                    href={fileUrl(it)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 truncate text-primary no-underline hover:underline"
+                  >
                     {it.original || it.name}
                   </a>
-                  <span className="ud-meta">{it.sizeText || ''}</span>
-                  <button className="ud-del" onClick={() => del(it.name, '文件')}>
+                  <span className="text-xs text-muted-foreground">{it.sizeText || ''}</span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-6 px-2 py-0 text-xs"
+                    onClick={() => del(it.name, '文件')}
+                  >
                     删
-                  </button>
+                  </Button>
                 </li>
               ))}
-              {!files.length && <li className="ud-empty">还没有文件，选一个上传试试</li>}
+              {!files.length && <li className="text-sm text-muted-foreground">还没有文件，选一个上传试试</li>}
             </ul>
           </div>
 
           {/* 占位图生成器 */}
-          <div className="ud-card">
-            <div className="ud-card-h">🎨 占位图（免真传：GET /api/image/placeholder/:size）</div>
-            <div className="ud-row">
-              <label>
+          <div className="mb-3 rounded-xl border bg-card p-3">
+            <div className="mb-2 text-sm font-semibold">🎨 占位图（免真传：GET /api/image/placeholder/:size）</div>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                 尺寸
-                <input value={phSize} onChange={(e) => setPhSize(e.target.value)} placeholder="300x200" />
+                <Input value={phSize} onChange={(e) => setPhSize(e.target.value)} placeholder="300x200" className="w-28" />
               </label>
-              <label>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                 文字
-                <input value={phText} onChange={(e) => setPhText(e.target.value)} placeholder="占位图" />
+                <Input value={phText} onChange={(e) => setPhText(e.target.value)} placeholder="占位图" className="w-32" />
               </label>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="ud-ph" src={phUrl} alt="占位图预览" />
-            <div className="ud-ph-url">{phUrl}</div>
+            <img className="mt-2 max-w-full rounded-lg border" src={phUrl} alt="占位图预览" />
+            <div className="mt-1.5 break-all font-mono text-xs text-muted-foreground">{phUrl}</div>
           </div>
         </div>
 
         {/* 请求日志 */}
-        <div className="ud-logs">
-          <div className="ud-logs-h">📡 请求日志（上传 = 1 次 POST）</div>
+        <div className="max-h-[520px] overflow-auto rounded-xl border bg-slate-900 p-3 font-mono text-xs text-slate-200">
+          <div className="mb-2 font-sans font-semibold text-sky-300">📡 请求日志（上传 = 1 次 POST）</div>
           {logs.length === 0 ? (
-            <div className="ud-logs-empty">操作后会显示每一次请求…</div>
+            <div className="text-slate-400">操作后会显示每一次请求…</div>
           ) : (
-            <ul>
+            <ul className="space-y-0.5">
               {logs.map((l, i) => (
-                <li key={i}>{l}</li>
+                <li key={i} className="border-b border-slate-800 py-0.5">
+                  {l}
+                </li>
               ))}
             </ul>
           )}
         </div>
       </div>
 
-      {error && <div className="ud-error">出错：{error}</div>}
+      {error && (
+        <div className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          出错：{error}
+        </div>
+      )}
 
-      <details className="ud-details">
+      <details className="cf-prose">
         <summary>🧠 核心 vs 外壳 · 这个示例在练什么</summary>
         <ul>
           <li>
@@ -244,25 +288,31 @@ export default function UploadDemoPage() {
           <li>
             <b>图片 vs 通用文件（别选错）</b>：两条独立路由，存盘位置、url 前缀、格式限制都不同——
             <ul>
-              <li><b>图片</b> <code>POST /api/image/upload</code> → 存 <code>data/uploads</code>，url <code>/img/&lt;name&gt;</code>。
-                落在 <code>data/</code>（与 JSON 库同目录，<b>不在 Next 公开目录</b>），必须借应用路由 <code>/img/:name</code> 访问，
-                属「<b>应用托管的内部图片存储</b>」；<b>只接受图片格式</b>（jpg/png/gif/webp/svg/bmp/ico/avif），传其它格式直接 400。
-                适合头像 / 配图 / 缩略图等要受应用管控、未来可随库一起换存储后端的图片。</li>
-              <li><b>通用文件</b> <code>POST /api/file/upload</code> → 存 <code>public/uploads</code>，url <code>/uploads/&lt;name&gt;</code>。
-                落在 Next 的 <code>public/</code> 公开静态目录，文件以 <code>/uploads/&lt;name&gt;</code> <b>直接静态可访问、无应用层</b>，属「<b>对外公开静态资源</b>」；
-                <b>不限格式</b>（pdf/doc/zip/视频均收）。适合需直接外链 / 下载的任意文件。</li>
+              <li>
+                <b>图片</b> <code>POST /api/image/upload</code> → 存 <code>data/uploads</code>，url{' '}
+                <code>/img/&lt;name&gt;</code>。 落在 <code>data/</code>（与 JSON 库同目录，<b>不在 Next 公开目录</b>），必须借应用路由{' '}
+                <code>/img/:name</code> 访问，属「<b>应用托管的内部图片存储</b>」；<b>只接受图片格式</b>
+                （jpg/png/gif/webp/svg/bmp/ico/avif），传其它格式直接 400。 适合头像 / 配图 / 缩略图等要受应用管控、未来可随库一起换存储后端的图片。
+              </li>
+              <li>
+                <b>通用文件</b> <code>POST /api/file/upload</code> → 存 <code>public/uploads</code>，url{' '}
+                <code>/uploads/&lt;name&gt;</code>。 落在 Next 的 <code>public/</code> 公开静态目录，文件以{' '}
+                <code>/uploads/&lt;name&gt;</code> <b>直接静态可访问、无应用层</b>，属「<b>对外公开静态资源</b>」；
+                <b>不限格式</b>（pdf/doc/zip/视频均收）。适合需直接外链 / 下载的任意文件。
+              </li>
             </ul>
             <b>误用提醒</b>：要直接外链下载的文档别走 <code>/api/image</code>（会被格式拦截，且不在 public 无法直链）；
             私密 / 受控图片别走 <code>/api/file</code>（进了 public 就完全公开、无应用层管控）。
             删除都是 <code>DELETE /api/image/:name</code> / <code>/api/file/:name</code>。
           </li>
           <li>
-            <b>多文件 = 1 次请求</b>：把所有 File 都 append 到同一个 <code>file</code> 字段，基座 <code>form.getAll('file')</code>
-            一次性收下，日志只出现 <code>POST ×1</code>——不必循环发 N 次（这是和「逐条 [id]」不同的地方：上传本就能批量）。
+            <b>多文件 = 1 次请求</b>：把所有 File 都 append 到同一个 <code>file</code> 字段，基座{' '}
+            <code>form.getAll('file')</code> 一次性收下，日志只出现 <code>POST ×1</code>——不必循环发 N 次（这是和「逐条 [id]」不同的地方：上传本就能批量）。
           </li>
           <li>
-            <b>占位图（练习点）</b>：不想真传图做布局时，用 <code>GET /api/image/placeholder/:size?text=</code>
-            （如 <code>/api/image/placeholder/300x200?text=hi</code>）生成 SVG 占位，前端直接当图片 src。
+            <b>占位图（练习点）</b>：不想真传图做布局时，用{' '}
+            <code>GET /api/image/placeholder/:size?text=</code>（如{' '}
+            <code>/api/image/placeholder/300x200?text=hi</code>）生成 SVG 占位，前端直接当图片 src。
           </li>
           <li>
             <b>外壳（UI）</b>：文件选择 + 缩略图网格 + 文件列表 + 删除 + 占位图生成器 + 请求日志。换成任意框架，核心不变。
@@ -272,7 +322,7 @@ export default function UploadDemoPage() {
             （本项目教学态默认不启，直接可用）。绝不直读 <code>data/uploads</code> / <code>public/uploads</code> 目录。
           </li>
         </ul>
-        <table className="ud-compare">
+        <table>
           <thead>
             <tr>
               <th>维度</th>
@@ -302,48 +352,3 @@ export default function UploadDemoPage() {
     </main>
   )
 }
-
-const css = `
-.ud-wrap { max-width: 1000px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; color: #1f2937; }
-.ud-wrap h1 { font-size: 24px; margin: 0 0 8px; }
-.ud-sub { color: #6b7280; line-height: 1.6; margin: 0 0 16px; }
-.ud-sub code, .ud-details code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-.ud-loading-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60;
-  background: linear-gradient(90deg, transparent, #2563eb, #60a5fa, transparent);
-  animation: ud-loadbar .9s linear infinite; }
-@keyframes ud-loadbar { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-.ud-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
-@media (max-width: 760px) { .ud-grid { grid-template-columns: 1fr; } }
-.ud-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
-.ud-card-h { font-weight: 600; margin-bottom: 8px; font-size: 14px; }
-.ud-hint { color: #6b7280; font-size: 13px; margin: 6px 0; }
-.ud-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
-.ud-row label { display: flex; flex-direction: column; font-size: 12px; color: #6b7280; gap: 4px; }
-.ud-row input { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 8px; }
-.ud-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 8px; }
-.ud-thumb { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #fff; }
-.ud-thumb img { width: 100%; height: 90px; object-fit: cover; display: block; }
-.ud-thumb-bar { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 6px; font-size: 12px; }
-.ud-thumb-bar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ud-filelist { list-style: none; margin: 8px 0 0; padding: 0; }
-.ud-filelist li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eef2f7; font-size: 14px; }
-.ud-filelist a { color: #2563eb; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-.ud-filelist a:hover { text-decoration: underline; }
-.ud-meta { color: #9ca3af; font-size: 12px; }
-.ud-del { border: 1px solid #fecaca; background: #fef2f2; color: #b91c1c; border-radius: 6px; padding: 2px 8px; cursor: pointer; font-size: 12px; }
-.ud-empty { color: #9ca3af; font-size: 13px; padding: 8px 0; }
-.ud-ph { max-width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; margin-top: 8px; }
-.ud-ph-url { font-family: ui-monospace, monospace; font-size: 12px; color: #6b7280; word-break: break-all; margin-top: 6px; }
-.ud-error { background: #fef2f2; color: #b91c1c; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
-.ud-logs { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 10px 12px; font-family: ui-monospace, monospace; font-size: 12px; max-height: 520px; overflow: auto; }
-.ud-logs-h { font-family: system-ui, sans-serif; font-weight: 600; color: #93c5fd; margin-bottom: 8px; }
-.ud-logs-empty { color: #64748b; }
-.ud-logs ul { list-style: none; margin: 0; padding: 0; line-height: 1.7; }
-.ud-logs li { border-bottom: 1px solid #1e293b; padding: 2px 0; }
-.ud-details { margin-top: 24px; background: #f9fafb; border-radius: 10px; padding: 12px 16px; }
-.ud-details summary { cursor: pointer; font-weight: 600; }
-.ud-details ul { line-height: 1.7; padding-left: 20px; }
-.ud-compare { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-.ud-compare th, .ud-compare td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; vertical-align: top; }
-.ud-compare th { background: #eef2ff; }
-`
