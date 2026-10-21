@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 
 /**
  * 从 Vue 转 React（批量操作 batch-ops 篇）
@@ -18,6 +21,9 @@ import { useEffect, useState } from 'react'
  *          👉 练习点（理解「集合级 1 次」vs「循环 N 次」的请求数差异）。
  *
  * 数据文件：本例用 tasks 集合（data/tasks.json）。不预建——首次 POST 时基座自动建库（约定式）。
+ *
+ * 样式：已改为 Tailwind 工具类 + shadcn 组件（Checkbox/Button/Input），设计令牌驱动、暗色自适应；
+ *       原 <style>{css}</style> 字符串写法已移除（全局污染 / 硬编码 hex / 暗色失效）。
  */
 
 type Row = Record<string, unknown>
@@ -238,103 +244,118 @@ export default function BatchOpsPage() {
     setSelected(n)
   }
   const allChecked = tasks.length > 0 && tasks.every((t) => selected.has(String(t.id)))
-  const toggleAll = () => setSelected(allChecked ? new Set() : new Set(tasks.map((t) => String(t.id))))
+  const toggleAll = () =>
+    setSelected(allChecked ? new Set() : new Set(tasks.map((t) => String(t.id))))
 
   const renderDone = (v: unknown) => (v ? '✅ 完成' : '⬜ 待办')
 
   return (
-    <main className="bo-wrap">
-      <style>{css}</style>
-      {loading && <div className="bo-loading-bar" aria-hidden />}
-      <h1>📦 批量操作 · Batch Ops Demo</h1>
-      <p className="bo-sub">
-        检验基座「批量」能力：<strong>批量新增</strong>靠 <code>POST</code> 收数组（1 次请求插多条）；
+    <main className="mx-auto max-w-[1000px] p-6">
+      {loading && (
+        <div className="fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden">
+          <div className="h-full w-1/3 animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+        </div>
+      )}
+      <h1 className="text-2xl font-semibold">📦 批量操作 · Batch Ops Demo</h1>
+      <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+        检验基座「批量」能力：<strong>批量新增</strong>靠 <code className="cf-code">POST</code> 收数组（1 次请求插多条）；
         <strong>批量改 / 批量删</strong>基座也提供了集合级接口
-        <code>batch-delete</code> / <code>batch-update</code>（1 次请求按 id 批量完成）。
-        下方同时给出「集合级（1 次）」和「循环 <code>[id]</code>（N 次）」两种写法，勾选若干行点按钮，
-        看右侧「请求日志」体会请求数差异。所有请求走 <code>/api/*</code>。
+        <code className="cf-code">batch-delete</code> / <code className="cf-code">batch-update</code>（1 次请求按 id 批量完成）。
+        下方同时给出「集合级（1 次）」和「循环 <code className="cf-code">[id]</code>（N 次）」两种写法，勾选若干行点按钮，
+        看右侧「请求日志」体会请求数差异。所有请求走 <code className="cf-code">/api/*</code>。
       </p>
 
       {/* 写操作栏 */}
-      <div className="bo-bar">
-        <button className="bo-primary" onClick={batchAdd}>
-          批量新增 5 条示例
-        </button>
-        <button className="bo-ghost" onClick={clearAll}>
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <Button onClick={batchAdd}>批量新增 5 条示例</Button>
+        <Button variant="outline" onClick={clearAll}>
           清空集合
-        </button>
+        </Button>
       </div>
 
       {/* 批量删除：两种写法对照 */}
-      <div className="bo-row">
-        <span className="bo-row-label">批量删除（选中 {selected.size}）：</span>
-        <button className="bo-primary" onClick={batchDeleteColl} disabled={!selected.size}>
+      <div className="mb-2.5 flex flex-wrap items-center gap-2.5 text-sm">
+        <span className="font-semibold">批量删除（选中 {selected.size}）：</span>
+        <Button onClick={batchDeleteColl} disabled={!selected.size}>
           集合级 batch-delete（1 次）
-        </button>
-        <button className="bo-ghost" onClick={batchDeleteLoop} disabled={!selected.size}>
+        </Button>
+        <Button variant="outline" onClick={batchDeleteLoop} disabled={!selected.size}>
           循环 [id]（N 次）
-        </button>
+        </Button>
       </div>
 
       {/* 批量标记完成：两种写法对照 */}
-      <div className="bo-row">
-        <span className="bo-row-label">标记完成（选中 {selected.size}）：</span>
-        <button className="bo-primary" onClick={batchDoneColl} disabled={!selected.size}>
+      <div className="mb-2.5 flex flex-wrap items-center gap-2.5 text-sm">
+        <span className="font-semibold">标记完成（选中 {selected.size}）：</span>
+        <Button onClick={batchDoneColl} disabled={!selected.size}>
           集合级 batch-update（1 次）
-        </button>
-        <button className="bo-ghost" onClick={batchDoneLoop} disabled={!selected.size}>
+        </Button>
+        <Button variant="outline" onClick={batchDoneLoop} disabled={!selected.size}>
           循环 [id]（N 次）
-        </button>
+        </Button>
       </div>
 
       {/* 单条新增（对照用） */}
-      <div className="bo-create">
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
         <strong>单条新增</strong>
-        <input
+        <Input
+          className="w-48"
           placeholder="任务标题"
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addOne()}
         />
-        <button className="bo-primary" onClick={addOne}>
+        <Button onClick={addOne} disabled={!newTitle.trim()}>
           新增 1 条
-        </button>
+        </Button>
       </div>
 
-      {error && <div className="bo-error">出错：{error}</div>}
+      {error && (
+        <div className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          出错：{error}
+        </div>
+      )}
 
-      <div className="bo-grid">
-        <div className="bo-left">
-          <table className={`bo-table${loading ? ' is-loading' : ''}`}>
+      <div className="grid grid-cols-1 gap-4 min-[760px]:grid-cols-[1fr_320px]">
+        <div>
+          <table className={`w-full border-collapse text-sm transition-opacity ${loading ? 'opacity-50' : ''}`}>
             <thead>
               <tr>
-                <th>
-                  <input type="checkbox" checked={allChecked} onChange={toggleAll} aria-label="全选" />
+                <th className="w-10 border border-border bg-muted px-2.5 py-2 text-left font-semibold">
+                  <Checkbox checked={allChecked} onCheckedChange={() => toggleAll()} aria-label="全选" />
                 </th>
-                <th>id</th>
-                <th>标题</th>
-                <th>状态</th>
+                <th className="border border-border bg-muted px-2.5 py-2 text-left font-semibold">id</th>
+                <th className="border border-border bg-muted px-2.5 py-2 text-left font-semibold">标题</th>
+                <th className="border border-border bg-muted px-2.5 py-2 text-left font-semibold">状态</th>
               </tr>
             </thead>
             <tbody>
-              {tasks.map((t) => (
-                <tr key={String(t.id)} className={selected.has(String(t.id)) ? 'is-sel' : ''}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selected.has(String(t.id))}
-                      onChange={() => toggle(String(t.id))}
-                      aria-label={`选择 ${String(t.id)}`}
-                    />
-                  </td>
-                  <td>{String(t.id)}</td>
-                  <td>{String(t.title)}</td>
-                  <td>{renderDone(t.done)}</td>
-                </tr>
-              ))}
+              {tasks.map((t) => {
+                const id = String(t.id)
+                const isSel = selected.has(id)
+                return (
+                  <tr
+                    key={id}
+                    className={
+                      isSel ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/40'
+                    }
+                  >
+                    <td className="border border-border px-2.5 py-2 align-top">
+                      <Checkbox
+                        checked={isSel}
+                        onCheckedChange={() => toggle(id)}
+                        aria-label={`选择 ${id}`}
+                      />
+                    </td>
+                    <td className="border border-border px-2.5 py-2 align-top">{id}</td>
+                    <td className="border border-border px-2.5 py-2 align-top">{String(t.title)}</td>
+                    <td className="border border-border px-2.5 py-2 align-top">{renderDone(t.done)}</td>
+                  </tr>
+                )
+              })}
               {!loading && tasks.length === 0 && (
                 <tr>
-                  <td className="bo-empty" colSpan={4}>
+                  <td className="border border-border px-2.5 py-4 text-center text-muted-foreground" colSpan={4}>
                     暂无任务，点「批量新增 5 条示例」或上方「新增 1 条」
                   </td>
                 </tr>
@@ -344,21 +365,23 @@ export default function BatchOpsPage() {
         </div>
 
         {/* 请求日志：把每次 fetch 打出来，直观对比「1 次」vs「N 次」 */}
-        <div className="bo-logs">
-          <div className="bo-logs-h">📡 请求日志（看请求数）</div>
+        <div className="max-h-[360px] overflow-auto rounded-xl border bg-slate-900 p-3 font-mono text-xs text-slate-200">
+          <div className="mb-2 font-sans font-semibold text-sky-300">📡 请求日志（看请求数）</div>
           {logs.length === 0 ? (
-            <div className="bo-logs-empty">操作后会显示每一次请求…</div>
+            <div className="text-slate-400">操作后会显示每一次请求…</div>
           ) : (
-            <ul>
+            <ul className="space-y-0.5">
               {logs.map((l, i) => (
-                <li key={i}>{l}</li>
+                <li key={i} className="border-b border-slate-800 py-0.5">
+                  {l}
+                </li>
               ))}
             </ul>
           )}
         </div>
       </div>
 
-      <details className="bo-details">
+      <details className="cf-prose">
         <summary>🧠 核心 vs 外壳 · 这个示例在练什么</summary>
         <ul>
           <li>
@@ -388,7 +411,7 @@ export default function BatchOpsPage() {
             <code>tasks.json</code> 不预建，首次 <code>POST</code> 时基座自动建库（约定式 CRUD）。
           </li>
         </ul>
-        <table className="bo-compare">
+        <table>
           <thead>
             <tr>
               <th>维度</th>
@@ -418,45 +441,3 @@ export default function BatchOpsPage() {
     </main>
   )
 }
-
-const css = `
-.bo-wrap { max-width: 1000px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; color: #1f2937; }
-.bo-wrap h1 { font-size: 24px; margin: 0 0 8px; }
-.bo-sub { color: #6b7280; line-height: 1.6; margin: 0 0 16px; }
-.bo-sub code, .bo-details code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-.bo-loading-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60;
-  background: linear-gradient(90deg, transparent, #2563eb, #60a5fa, transparent);
-  animation: bo-loadbar .9s linear infinite; }
-@keyframes bo-loadbar { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-.bo-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 14px; }
-.bo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 14px; }
-.bo-row-label { color: #374151; font-weight: 600; }
-.bo-hint { color: #6b7280; font-size: 13px; }
-.bo-ghost { padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; }
-.bo-ghost:disabled { opacity: .4; cursor: not-allowed; }
-.bo-primary { padding: 6px 14px; border: none; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; }
-.bo-primary:disabled { opacity: .4; cursor: not-allowed; }
-.bo-create { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 14px; }
-.bo-create input { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 8px; }
-.bo-error { background: #fef2f2; color: #b91c1c; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
-.bo-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
-@media (max-width: 760px) { .bo-grid { grid-template-columns: 1fr; } }
-.bo-table { width: 100%; border-collapse: collapse; font-size: 14px; transition: opacity .18s ease; }
-.bo-table.is-loading { opacity: .5; }
-.bo-table th { background: #f9fafb; font-weight: 600; border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
-.bo-table td { border: 1px solid #e5e7eb; padding: 8px 10px; vertical-align: top; }
-.bo-table tr:nth-child(even) { background: #fafafa; }
-.bo-table tr.is-sel { background: #eff6ff; }
-.bo-empty { text-align: center; color: #9ca3af; padding: 16px; }
-.bo-logs { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 10px 12px; font-family: ui-monospace, monospace; font-size: 12px; max-height: 360px; overflow: auto; }
-.bo-logs-h { font-family: system-ui, sans-serif; font-weight: 600; color: #93c5fd; margin-bottom: 8px; }
-.bo-logs-empty { color: #64748b; }
-.bo-logs ul { list-style: none; margin: 0; padding: 0; line-height: 1.7; }
-.bo-logs li { border-bottom: 1px solid #1e293b; padding: 2px 0; }
-.bo-details { margin-top: 24px; background: #f9fafb; border-radius: 10px; padding: 12px 16px; }
-.bo-details summary { cursor: pointer; font-weight: 600; }
-.bo-details ul { line-height: 1.7; padding-left: 20px; }
-.bo-compare { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-.bo-compare th, .bo-compare td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; vertical-align: top; }
-.bo-compare th { background: #eef2ff; }
-`

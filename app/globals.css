@@ -122,3 +122,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* 示例页通用排版：替代原 <style>{css}</style> 教学写法，全部基于设计令牌、暗色自适应 */
+  .cf-prose {
+    @apply mt-6 rounded-xl border bg-card p-4 text-sm;
+  }
+  .cf-prose summary {
+    @apply cursor-pointer font-semibold;
+  }
+  .cf-prose ul {
+    @apply list-disc space-y-1 pl-5;
+  }
+  .cf-prose li {
+    @apply leading-relaxed;
+  }
+  .cf-prose code {
+    @apply rounded bg-muted px-1 py-0.5 font-mono text-xs;
+  }
+  .cf-prose table {
+    @apply mt-3 w-full border-collapse text-xs;
+  }
+  .cf-prose th,
+  .cf-prose td {
+    @apply border border-border p-1.5 text-left align-top;
+  }
+  .cf-prose th {
+    @apply bg-muted font-medium;
+  }
+  .cf-code {
+    @apply rounded bg-muted px-1 py-0.5 font-mono text-xs;
+  }
+}
