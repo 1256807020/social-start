@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 
 /**
  * 从 Vue 转 React（导入 / 导出 import-export 篇）
@@ -15,6 +17,9 @@ import { useEffect, useState } from 'react'
  *          👉 练习点（理解「CSV 往返」——导出 csv 再导入，注意类型会被扁平化）。
  *
  * 数据文件：本例用 books 集合（data/books.json）。不预建——首次 import 时基座自动建库（约定式）。
+ *
+ * 样式：已改为 Tailwind 工具类 + shadcn 组件（Button/Textarea），设计令牌驱动、暗色自适应；
+ *       原 <style>{css}</style> 字符串写法已移除（全局污染 / 硬编码 hex / 暗色失效）。
  */
 
 type Row = Record<string, unknown>
@@ -143,51 +148,52 @@ export default function ImportExportPage() {
   }
 
   const renderCell = (v: unknown) =>
-    v == null ? <span className="ie-null">（空）</span> : String(v)
+    v == null ? <span className="text-muted-foreground">（空）</span> : String(v)
 
   return (
-    <main className="ie-wrap">
-      <style>{css}</style>
-      {loading && <div className="ie-loading-bar" aria-hidden />}
-      <h1>📥📤 导入 / 导出 · Import / Export Demo</h1>
-      <p className="ie-sub">
-        检验基座「集合级导入 / 导出」能力：<strong>导入</strong> 用 <code>POST /api/:resource/import</code>，
-        既收 <strong>JSON 数组</strong>，也收上传的 <strong>.json / .csv 文件</strong>（multipart）；
-        <strong>导出</strong> 用 <code>GET /api/:resource/export?format=json|csv</code> 直接下载。
-        所有请求走 <code>/api/*</code>，前端不自己解析 CSV。
+    <main className="mx-auto max-w-[1000px] p-6">
+      {loading && (
+        <div className="fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden">
+          <div className="h-full w-1/3 animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+        </div>
+      )}
+      <h1 className="text-2xl font-semibold">📥📤 导入 / 导出 · Import / Export Demo</h1>
+      <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+        检验基座「集合级导入 / 导出」能力：<strong>导入</strong> 用{' '}
+        <code className="cf-code">POST /api/:resource/import</code>，既收 <strong>JSON 数组</strong>，也收上传的{' '}
+        <strong>.json / .csv 文件</strong>（multipart）；<strong>导出</strong> 用{' '}
+        <code className="cf-code">GET /api/:resource/export?format=json|csv</code> 直接下载。 所有请求走{' '}
+        <code className="cf-code">/api/*</code>，前端不自己解析 CSV。
       </p>
 
-      <div className="ie-bar">
-        <button className="ie-primary" onClick={seed}>
-          填充示例数据
-        </button>
-        <button className="ie-ghost" onClick={() => download('json')}>
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <Button onClick={seed}>填充示例数据</Button>
+        <Button variant="outline" onClick={() => download('json')}>
           导出 JSON
-        </button>
-        <button className="ie-ghost" onClick={() => download('csv')}>
+        </Button>
+        <Button variant="outline" onClick={() => download('csv')}>
           导出 CSV
-        </button>
-        <span className="ie-hint">导出后把文件再「上传导入」，体验 CSV 往返</span>
+        </Button>
+        <span className="text-sm text-muted-foreground">导出后把文件再「上传导入」，体验 CSV 往返</span>
       </div>
 
-      <div className="ie-grid">
-        <div className="ie-left">
+      <div className="grid grid-cols-1 gap-4 min-[760px]:grid-cols-[1fr_320px]">
+        <div>
           {/* 导入：粘贴 JSON */}
-          <div className="ie-card">
-            <div className="ie-card-h">① 导入（粘贴 JSON 数组）</div>
-            <textarea
+          <div className="mb-3 rounded-xl border bg-card p-3">
+            <div className="mb-2 text-sm font-semibold">① 导入（粘贴 JSON 数组）</div>
+            <Textarea
               value={jsonText}
               onChange={(e) => setJsonText(e.target.value)}
               spellCheck={false}
+              className="mb-2 min-h-[120px] font-mono text-xs"
             />
-            <button className="ie-primary" onClick={importJson}>
-              导入 JSON
-            </button>
+            <Button onClick={importJson}>导入 JSON</Button>
           </div>
 
           {/* 导入：上传文件 */}
-          <div className="ie-card">
-            <div className="ie-card-h">② 导入（上传 .json / .csv 文件）</div>
+          <div className="mb-3 rounded-xl border bg-card p-3">
+            <div className="mb-2 text-sm font-semibold">② 导入（上传 .json / .csv 文件）</div>
             <input
               type="file"
               accept=".json,.csv"
@@ -198,35 +204,40 @@ export default function ImportExportPage() {
                   importFile(f)
                 }
               }}
+              className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-primary-foreground hover:file:bg-primary/90"
             />
-            {fileName && <div className="ie-file">已选：{fileName}</div>}
+            {fileName && <div className="mt-1.5 text-sm text-muted-foreground">已选：{fileName}</div>}
           </div>
 
-          {error && <div className="ie-error">出错：{error}</div>}
+          {error && (
+            <div className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              出错：{error}
+            </div>
+          )}
 
-          <table className={`ie-table${loading ? ' is-loading' : ''}`}>
+          <table className={`w-full border-collapse text-sm transition-opacity ${loading ? 'opacity-50' : ''}`}>
             <thead>
               <tr>
-                <th>id</th>
-                <th>书名</th>
-                <th>作者</th>
-                <th>年份</th>
-                <th>价格</th>
+                <th className="border border-border bg-muted px-2.5 py-2 text-left font-semibold">id</th>
+                <th className="border border-border bg-muted px-2.5 py-2 text-left font-semibold">书名</th>
+                <th className="border border-border bg-muted px-2.5 py-2 text-left font-semibold">作者</th>
+                <th className="border border-border bg-muted px-2.5 py-2 text-left font-semibold">年份</th>
+                <th className="border border-border bg-muted px-2.5 py-2 text-left font-semibold">价格</th>
               </tr>
             </thead>
             <tbody>
               {books.map((b) => (
-                <tr key={String(b.id)}>
-                  <td>{String(b.id)}</td>
-                  <td>{renderCell(b.title)}</td>
-                  <td>{renderCell(b.author)}</td>
-                  <td>{renderCell(b.year)}</td>
-                  <td>{renderCell(b.price)}</td>
+                <tr key={String(b.id)} className="even:bg-muted/50">
+                  <td className="border border-border px-2.5 py-2 align-top">{String(b.id)}</td>
+                  <td className="border border-border px-2.5 py-2 align-top">{renderCell(b.title)}</td>
+                  <td className="border border-border px-2.5 py-2 align-top">{renderCell(b.author)}</td>
+                  <td className="border border-border px-2.5 py-2 align-top">{renderCell(b.year)}</td>
+                  <td className="border border-border px-2.5 py-2 align-top">{renderCell(b.price)}</td>
                 </tr>
               ))}
               {!loading && books.length === 0 && (
                 <tr>
-                  <td className="ie-empty" colSpan={5}>
+                  <td className="border border-border px-2.5 py-4 text-center text-muted-foreground" colSpan={5}>
                     暂无数据，点「填充示例数据」或上方导入
                   </td>
                 </tr>
@@ -236,21 +247,25 @@ export default function ImportExportPage() {
         </div>
 
         {/* 请求日志 */}
-        <div className="ie-logs">
-          <div className="ie-logs-h">📡 请求日志（每次导入/导出都 1 次请求）</div>
+        <div className="max-h-[360px] overflow-auto rounded-xl border bg-slate-900 p-3 font-mono text-xs text-slate-200">
+          <div className="mb-2 font-sans font-semibold text-sky-300">
+            📡 请求日志（每次导入/导出都 1 次请求）
+          </div>
           {logs.length === 0 ? (
-            <div className="ie-logs-empty">操作后会显示每一次请求…</div>
+            <div className="text-slate-400">操作后会显示每一次请求…</div>
           ) : (
-            <ul>
+            <ul className="space-y-0.5">
               {logs.map((l, i) => (
-                <li key={i}>{l}</li>
+                <li key={i} className="border-b border-slate-800 py-0.5">
+                  {l}
+                </li>
               ))}
             </ul>
           )}
         </div>
       </div>
 
-      <details className="ie-details">
+      <details className="cf-prose">
         <summary>🧠 核心 vs 外壳 · 这个示例在练什么</summary>
         <ul>
           <li>
@@ -277,7 +292,7 @@ export default function ImportExportPage() {
             <code>books.json</code> 不预建，首次 import 时基座自动建库（约定式 CRUD）。
           </li>
         </ul>
-        <table className="ie-compare">
+        <table>
           <thead>
             <tr>
               <th>维度</th>
@@ -307,44 +322,3 @@ export default function ImportExportPage() {
     </main>
   )
 }
-
-const css = `
-.ie-wrap { max-width: 1000px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; color: #1f2937; }
-.ie-wrap h1 { font-size: 24px; margin: 0 0 8px; }
-.ie-sub { color: #6b7280; line-height: 1.6; margin: 0 0 16px; }
-.ie-sub code, .ie-details code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-.ie-loading-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60;
-  background: linear-gradient(90deg, transparent, #2563eb, #60a5fa, transparent);
-  animation: ie-loadbar .9s linear infinite; }
-@keyframes ie-loadbar { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-.ie-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 14px; }
-.ie-hint { color: #6b7280; font-size: 13px; }
-.ie-ghost { padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; }
-.ie-ghost:disabled { opacity: .4; cursor: not-allowed; }
-.ie-primary { padding: 6px 14px; border: none; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; }
-.ie-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
-@media (max-width: 760px) { .ie-grid { grid-template-columns: 1fr; } }
-.ie-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
-.ie-card-h { font-weight: 600; margin-bottom: 8px; font-size: 14px; }
-.ie-card textarea { width: 100%; min-height: 120px; font-family: ui-monospace, monospace; font-size: 12px; padding: 8px; border: 1px solid #d1d5db; border-radius: 8px; resize: vertical; margin-bottom: 8px; }
-.ie-file { color: #6b7280; font-size: 13px; margin-top: 6px; }
-.ie-error { background: #fef2f2; color: #b91c1c; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
-.ie-table { width: 100%; border-collapse: collapse; font-size: 14px; transition: opacity .18s ease; }
-.ie-table.is-loading { opacity: .5; }
-.ie-table th { background: #f9fafb; font-weight: 600; border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
-.ie-table td { border: 1px solid #e5e7eb; padding: 8px 10px; vertical-align: top; }
-.ie-table tr:nth-child(even) { background: #fafafa; }
-.ie-null { color: #9ca3af; }
-.ie-empty { text-align: center; color: #9ca3af; padding: 16px; }
-.ie-logs { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 10px 12px; font-family: ui-monospace, monospace; font-size: 12px; max-height: 360px; overflow: auto; }
-.ie-logs-h { font-family: system-ui, sans-serif; font-weight: 600; color: #93c5fd; margin-bottom: 8px; }
-.ie-logs-empty { color: #64748b; }
-.ie-logs ul { list-style: none; margin: 0; padding: 0; line-height: 1.7; }
-.ie-logs li { border-bottom: 1px solid #1e293b; padding: 2px 0; }
-.ie-details { margin-top: 24px; background: #f9fafb; border-radius: 10px; padding: 12px 16px; }
-.ie-details summary { cursor: pointer; font-weight: 600; }
-.ie-details ul { line-height: 1.7; padding-left: 20px; }
-.ie-compare { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-.ie-compare th, .ie-compare td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; vertical-align: top; }
-.ie-compare th { background: #eef2ff; }
-`
