@@ -26,6 +26,39 @@ import {
  *
  * 样式：已改为 Tailwind 工具类 + shadcn 组件（Select/Input/Label/Button/Table），设计令牌驱动、暗色自适应；
  *       原 <style>{css}</style> 字符串写法已移除（全局污染 / 硬编码 hex / 暗色失效）。
+ *
+ * ─────────────────────────────────────────────────────────────
+ * 【基座 aggregate 接口 · 具体用法速查】
+ * 路径   ：GET /api/{resource}/aggregate
+ * 信封   ：{ code:0, data:[聚合行...], total, msg }（total = 分组数）
+ * 核心思想：一个 JSON 文件 = 一张表，基座自动在内存数组上做
+ *          group by + count/sum/avg/min/max，无需任何后端代码。
+ *
+ * 参数（全部拼在 URL query，可任意组合）：
+ *   groupBy : 分组字段名。有它才有分组；省略则对整个集合返回单行统计。
+ *   sum     : 数值字段，可逗号分隔多个 → 产出列 sum_字段
+ *   avg     : 数值字段，可逗号分隔多个 → 产出列 avg_字段
+ *   min     : 数值字段，可逗号分隔多个 → 产出列 min_字段
+ *   max     : 数值字段，可逗号分隔多个 → 产出列 max_字段
+ *
+ * 分组前过滤（聚合会复用查询引擎 applyQuery，仅「非保留参数」生效）：
+ *   · 字段等值      ?groupBy=role&status=active      → 只统计 status=active
+ *   · 范围操作符     ?groupBy=role&age_gte=18         (支持 _gte/_lte/_gt/_lt)
+ *   · 多值/模糊/不等 ?groupBy=role&tag_in=a,b         (支持 _in/_nin/_like/_ne)
+ *   ⚠ 注意：page / pageSize / sort / order / keyword / fields / tree 这些
+ *           列表查询特性在聚合里被忽略（聚合结果就是全部分组，不分页）。
+ *
+ * 返回形状示例（users 按 role 分组，并对 amount 求 sum/avg）：
+ *   GET /api/users/aggregate?groupBy=role&sum=amount&avg=amount
+ *   → data: [
+ *       { role:"admin",  count:3, sum_amount:900,  avg_amount:300 },
+ *       { role:"editor", count:7, sum_amount:1400, avg_amount:200 },
+ *     ]
+ *   无 groupBy 时：data: [ { count:10, sum_amount:2300, avg_amount:230 } ]
+ *
+ * 关键命名规则：指标列名是「前缀_字段」（sum_amount 而非 amount）。
+ *   所以页面里 metricCols = 自动抠出 groupBy 键与 count 之外的所有列。
+ * ─────────────────────────────────────────────────────────────
  */
 
 // 聚合结果的一行：键不固定（含 groupBy 键、count、以及 sum_*/avg_*/min_*/max_* 指标列），故用宽松类型
@@ -73,6 +106,8 @@ export default function DashboardPage() {
       setError(null)
       try {
         const params = new URLSearchParams()
+        // 拼装聚合 query：groupBy + 可选的数值指标（sum/avg/min/max）。
+        // 每个参数直接对应上方「基座 aggregate 接口」的用法速查。
         if (useGb) params.set('groupBy', useGb)
         if (sumField) params.set('sum', sumField)
         if (avgField) params.set('avg', avgField)
@@ -110,7 +145,8 @@ export default function DashboardPage() {
 
   // 计算每个分组的 count，找最大值用于条形图比例
   const maxCount = rows.length > 0 ? Math.max(...rows.map((r) => Number(r.count) || 0)) : 0
-  // 除 groupBy 键与 count 外的指标列（sum_*/avg_*/min_*/max_*）
+  // 指标列 = 除 groupBy 键与 count 之外的列，命名规则为「前缀_字段」
+  // （sum_*/avg_*/min_*/max_*）。列名不固定，所以这里动态抠出来渲染表头/单元格。
   const metricCols = rows.length ? Object.keys(rows[0]).filter((k) => k !== groupBy && k !== 'count') : []
 
   return (
@@ -276,6 +312,48 @@ export default function DashboardPage() {
           </li>
           <li>
             <b>真实接口请求</b>：聚合查询全部走 <code>/api/*</code>，绝不直接读 <code>data/*.json</code>。
+          </li>
+        </ul>
+      </details>
+
+      <details className="cf-prose">
+        <summary>🧪 真实请求示例 · 直接复制到终端跑（curl）</summary>
+        <ul>
+          <li>
+            <b>用户按角色分组 + 统计每组的 amount 求和/均值：</b>
+            <br />
+            <code className="cf-code">GET /api/users/aggregate?groupBy=role&sum=amount&avg=amount</code>
+            <br />
+            返回：
+            <code className="cf-code">
+              {'[{role:"admin",count:3,sum_amount:900,avg_amount:300}, {role:"editor",count:7,sum_amount:1400,avg_amount:200}]'}
+            </code>
+          </li>
+          <li>
+            <b>分组前先过滤（只统计 status=active 的用户，再按 role 分）：</b>
+            <br />
+            <code className="cf-code">GET /api/users/aggregate?groupBy=role&status=active</code>
+          </li>
+          <li>
+            <b>范围/多值过滤：</b>
+            <br />
+            <code className="cf-code">GET /api/users/aggregate?groupBy=role&age_gte=18&tag_in=a,b</code>
+            <br />
+            （支持 <code className="cf-code">_gte/_lte/_gt/_lt/_in/_nin/_like/_ne</code>）
+          </li>
+          <li>
+            <b>不分组，直接整体统计：</b>
+            <br />
+            <code className="cf-code">GET /api/users/aggregate?sum=amount&max=age</code>
+            <br />
+            返回单行：<code className="cf-code">{'[{count:10,sum_amount:2300,max_age:65}]'}</code>
+          </li>
+          <li>
+            <b>批量多字段：</b>
+            <code className="cf-code">GET /api/orders/aggregate?groupBy=city&sum=price,count&avg=price</code>
+            <br />
+            列名会变成 <code className="cf-code">sum_price</code> / <code className="cf-code">sum_count</code> /{' '}
+            <code className="cf-code">avg_price</code>（逗号分隔的字段各自生成一列）。
           </li>
         </ul>
       </details>
