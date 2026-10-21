@@ -8,7 +8,7 @@
 // ───────────────────────────────────────────────────────────
 'use client'
 
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 
 /**
  * 性能优化三板斧（搬运自 ReactAdm03）
@@ -62,8 +62,14 @@ function VirtualList({ total = 10000 }: { total?: number }) {
 /* ---------- 3. 防抖/节流 ---------- */
 // 👉 手敲 useDebounce：用 useEffect + setTimeout 返回防抖后的值
 function useDebounce<T>(value: T, delay = 300): T {
-  // 👉 const [v, setV] = useState(value); useEffect(() => { const t = setTimeout(() => setV(value), delay); return () => clearTimeout(t) }, [value, delay]); return v
-  return value
+  // debounced 才是「稳定后」的值，页面用它做实际动作（搜索请求等）
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    // 每次 value 变化都重置计时器：连续输入时旧 timer 被清掉，只有「停下 delay ms」才真正 setDebounced
+    const t = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(t) // 关键：输入未停就清掉上一次的延时，达到「防抖」
+  }, [value, delay])
+  return debounced
 }
 
 function Search() {
