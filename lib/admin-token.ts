@@ -10,6 +10,7 @@
  * - 本文件与 NextAuth 配置（lib/auth.ts）分离，避免两者争用同一模块路径。
  */
 export function isAuthEnabled(): boolean {
+  // 没设 ADMIN_TOKEN → 这层鉴权整体关闭（核心 CRUD 默认公开，零负担）
   return Boolean(process.env.ADMIN_TOKEN)
 }
 
@@ -18,16 +19,20 @@ function expectedToken(): string {
 }
 
 /**
- * 从请求中提取客户端 token，优先级：
+ * 从请求中提取客户端 token，优先级（谁先命中用谁）：
  *   Authorization: Bearer <token>  >  x-admin-token: <token>  >  ?adminToken=<token>
+ * 这样前端既能在 header 里带（规范做法），也能在 URL 里带（方便调试/某些环境）。
  */
 export function extractToken(req: { headers: Headers; url?: string }): string | null {
+  // ① 最规范：Authorization: Bearer xxx
   const auth = req.headers.get('authorization')
   if (auth && auth.toLowerCase().startsWith('bearer ')) return auth.slice(7).trim()
 
+  // ② 自定义头 x-admin-token：避免和别的 Bearer 鉴权（如 Auth.js/JWT）冲突
   const header = req.headers.get('x-admin-token')
   if (header) return header.trim()
 
+  // ③ 兜底：查询参数 ?adminToken=xxx（方便 curl 调试、或无法设 header 的环境）
   if (req.url) {
     try {
       const q = new URL(req.url).searchParams.get('adminToken')
@@ -39,7 +44,7 @@ export function extractToken(req: { headers: Headers; url?: string }): string | 
   return null
 }
 
-/** 校验请求是否放行（未启用 => 始终 true） */
+/** 校验请求是否放行：未启用 => 始终 true；启用 => token 必须非空且完全匹配 */
 export function verifyToken(req: { headers: Headers; url?: string }): boolean {
   if (!isAuthEnabled()) return true
   const t = extractToken(req)
