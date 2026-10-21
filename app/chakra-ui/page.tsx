@@ -121,15 +121,7 @@ function TodoApp() {
         <Text fontSize="sm">{page} / {totalPages}（共 {total}）</Text>
         <Button size="sm" disabled={page >= totalPages} onClick={() => load(page + 1)}>下一页</Button>
       </HStack>
-    </Container>
-  )
-}
 
-export default function ChakraUiPage() {
-  return (
-    <ChakraProvider>
-      <Box bg="gray.50" minH="100vh">
-        <TodoApp />
       <details className="mt-6 rounded border p-3 text-sm">
         <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
         <table className="mt-2 w-full border-collapse text-left">
@@ -145,7 +137,15 @@ export default function ChakraUiPage() {
         </table>
         <p className="mt-2 text-gray-500">📝 小结：同一后台需求不同 UI 库写法不同；本例 CRUD 全部走 /api/todo 真实接口。</p>
       </details>
+    </Container>
+  )
+}
 
+export default function ChakraUiPage() {
+  return (
+    <ChakraProvider>
+      <Box bg="gray.50" minH="100vh">
+        <TodoApp />
       </Box>
     </ChakraProvider>
   )
