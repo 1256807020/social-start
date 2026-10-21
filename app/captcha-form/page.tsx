@@ -1,6 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 /**
  * 从 Vue 转 React（图形验证码 captcha 篇）
@@ -14,6 +18,9 @@ import { useEffect, useState } from 'react'
  *          👉 练习点（captchaId 必须跟着图片走，每次刷新重新拉；验证码一次性，校验后须刷新）。
  *
  * 数据：验证码走基座 captcha 模块（/api/captcha、/api/captcha/verify），非自建 <resource>。
+ *
+ * 样式：已改为 Tailwind 工具类 + shadcn 组件（Button/Input/Card/Alert），设计令牌驱动、暗色自适应；
+ *       原 <style>{css}</style> 字符串写法已移除（全局污染 / 硬编码 hex / 暗色失效）。
  */
 
 type Captcha = { captchaId: string; image: string }
@@ -42,7 +49,7 @@ export default function CaptchaFormPage() {
       setMsg('')
     }
     try {
-      log(`GET /api/captcha  ×1`)
+      log('GET /api/captcha  ×1')
       const r = await fetch('/api/captcha', { cache: 'no-store' })
       const j = await r.json()
       if (j.code !== 0) throw new Error(j.msg || '获取验证码失败')
@@ -71,7 +78,7 @@ export default function CaptchaFormPage() {
     setLoading(true)
     setError(null)
     try {
-      log(`POST /api/captcha/verify  {captchaId, code}  ×1`)
+      log('POST /api/captcha/verify  {captchaId, code}  ×1')
       const r = await fetch('/api/captcha/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -92,69 +99,104 @@ export default function CaptchaFormPage() {
   }
 
   return (
-    <main className="cf-wrap">
-      <style>{css}</style>
-      {loading && <div className="cf-loading-bar" aria-hidden />}
-      <h1>🔐 图形验证码 · Captcha Form Demo</h1>
-      <p className="cf-sub">
-        检验基座「图形验证码」能力：<code>GET /api/captcha</code> 拿到 <code>{'{captchaId, image}'}</code>
-        （<code>image</code> 是 SVG data URI，直接 <code>&lt;img src&gt;</code> 显示）；
-        用户输入后 <code>POST /api/captcha/verify {'{captchaId, code}'}</code> 校验（一次性）。
+    <main className="mx-auto max-w-[1000px] p-6">
+      {loading && (
+        <div className="fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden bg-transparent">
+          <div className="h-full w-1/3 animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+        </div>
+      )}
+      <h1 className="text-2xl font-semibold">🔐 图形验证码 · Captcha Form Demo</h1>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        检验基座「图形验证码」能力：<code className="cf-code">GET /api/captcha</code> 拿到{' '}
+        <code className="cf-code">{'{ captchaId, image }'}</code>（<code className="cf-code">image</code> 是 SVG data URI，直接{' '}
+        <code className="cf-code">&lt;img src&gt;</code> 显示）；用户输入后{' '}
+        <code className="cf-code">POST /api/captcha/verify {'{captchaId, code}'}</code> 校验（一次性）。
         右侧「请求日志」看「刷新 = 1 次 GET，校验 = 1 次 POST」。
       </p>
 
-      <div className="cf-grid">
-        <div className="cf-left">
-          <div className="cf-card">
-            <div className="cf-card-h">验证码表单（跟着图片走的 captchaId）</div>
-            <div className="cf-captcha">
-              {captcha ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={captcha.image} alt="验证码" className="cf-img" />
-              ) : (
-                <div className="cf-img-placeholder">加载中…</div>
-              )}
-              <button className="cf-ghost" onClick={refresh} disabled={loading}>
-                刷新验证码
-              </button>
-            </div>
-            <input
-              className="cf-input"
-              placeholder="请输入上方验证码"
-              value={code}
-              onChange={(e) => { setCode(e.target.value); setResult(null); setMsg('') }}
-              onKeyDown={(e) => e.key === 'Enter' && verify()}
-            />
-            <button className="cf-primary" onClick={verify} disabled={loading || !captcha}>
-              校验
-            </button>
+      <div className="mt-4 grid grid-cols-1 gap-4 min-[760px]:grid-cols-[1fr_320px]">
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold">
+                验证码表单（跟着图片走的 captchaId）
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-3">
+                {captcha ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={captcha.image}
+                    alt="验证码"
+                    className="h-12 rounded-md border bg-background"
+                  />
+                ) : (
+                  <div className="flex h-12 w-[120px] items-center justify-center rounded-md border border-dashed text-muted-foreground">
+                    加载中…
+                  </div>
+                )}
+                <Button variant="outline" size="sm" onClick={() => refresh()} disabled={loading}>
+                  刷新验证码
+                </Button>
+              </div>
+              <Input
+                placeholder="请输入上方验证码"
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value)
+                  setResult(null)
+                  setMsg('')
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && verify()}
+              />
+              <Button onClick={verify} disabled={loading || !captcha}>
+                校验
+              </Button>
 
-            {result && (
-              <div className={result === 'ok' ? 'cf-result ok' : 'cf-result fail'}>{msg}</div>
-            )}
-            {error && <div className="cf-error">出错：{error}</div>}
-            <div className="cf-hint">
-              试试：看不准就点「刷新验证码」重新拉一张；校验不论成败都会自动刷新（验证码一次性）。
-            </div>
-          </div>
+              {result && (
+                <div
+                  className={
+                    result === 'ok'
+                      ? 'rounded-md bg-emerald-50 px-2.5 py-2 text-sm text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                      : 'rounded-md bg-destructive/10 px-2.5 py-2 text-sm text-destructive'
+                  }
+                >
+                  {msg}
+                </div>
+              )}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>出错：{error}</AlertDescription>
+                </Alert>
+              )}
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                试试：看不准就点「刷新验证码」重新拉一张；校验不论成败都会自动刷新（验证码一次性）。
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* 请求日志 */}
-        <div className="cf-logs">
-          <div className="cf-logs-h">📡 请求日志（刷新 = 1 GET，校验 = 1 POST）</div>
+        <div className="min-h-[360px] overflow-auto rounded-xl border bg-slate-900 p-3 font-mono text-xs text-slate-200">
+          <div className="mb-2 font-sans font-semibold text-sky-300">
+            📡 请求日志（刷新 = 1 GET，校验 = 1 POST）
+          </div>
           {logs.length === 0 ? (
-            <div className="cf-logs-empty">操作后会显示每一次请求…</div>
+            <div className="text-slate-400">操作后会显示每一次请求…</div>
           ) : (
-            <ul>
+            <ul className="space-y-0.5">
               {logs.map((l, i) => (
-                <li key={i}>{l}</li>
+                <li key={i} className="border-b border-slate-800 py-0.5">
+                  {l}
+                </li>
               ))}
             </ul>
           )}
         </div>
       </div>
 
-      <details className="cf-details">
+      <details className="cf-prose">
         <summary>🧠 核心 vs 外壳 · 这个示例在练什么</summary>
         <ul>
           <li>
@@ -180,7 +222,7 @@ export default function CaptchaFormPage() {
             POST 但校验本身不写数据，教学态默认无 ADMIN_TOKEN 直接可用。
           </li>
         </ul>
-        <table className="cf-compare">
+        <table>
           <thead>
             <tr>
               <th>维度</th>
@@ -210,41 +252,3 @@ export default function CaptchaFormPage() {
     </main>
   )
 }
-
-const css = `
-.cf-wrap { max-width: 1000px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; color: #1f2937; }
-.cf-wrap h1 { font-size: 24px; margin: 0 0 8px; }
-.cf-sub { color: #6b7280; line-height: 1.6; margin: 0 0 16px; }
-.cf-sub code, .cf-details code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-.cf-loading-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60;
-  background: linear-gradient(90deg, transparent, #2563eb, #60a5fa, transparent);
-  animation: cf-loadbar .9s linear infinite; }
-@keyframes cf-loadbar { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-.cf-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
-@media (max-width: 760px) { .cf-grid { grid-template-columns: 1fr; } }
-.cf-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; }
-.cf-card-h { font-weight: 600; margin-bottom: 10px; font-size: 14px; }
-.cf-captcha { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.cf-img { height: 48px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
-.cf-img-placeholder { height: 48px; width: 120px; display: flex; align-items: center; justify-content: center; color: #9ca3af; border: 1px dashed #d1d5db; border-radius: 8px; }
-.cf-input { width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
-.cf-primary { padding: 7px 16px; border: none; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; font-size: 14px; }
-.cf-ghost { padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; }
-.cf-ghost:disabled, .cf-primary:disabled { opacity: .4; cursor: not-allowed; }
-.cf-result { margin-top: 10px; padding: 8px 10px; border-radius: 8px; font-size: 14px; }
-.cf-result.ok { background: #ecfdf5; color: #047857; }
-.cf-result.fail { background: #fef2f2; color: #b91c1c; }
-.cf-error { background: #fef2f2; color: #b91c1c; padding: 8px 10px; border-radius: 8px; margin-top: 10px; }
-.cf-hint { color: #6b7280; font-size: 13px; margin-top: 10px; line-height: 1.5; }
-.cf-logs { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 10px 12px; font-family: ui-monospace, monospace; font-size: 12px; max-height: 360px; overflow: auto; }
-.cf-logs-h { font-family: system-ui, sans-serif; font-weight: 600; color: #93c5fd; margin-bottom: 8px; }
-.cf-logs-empty { color: #64748b; }
-.cf-logs ul { list-style: none; margin: 0; padding: 0; line-height: 1.7; }
-.cf-logs li { border-bottom: 1px solid #1e293b; padding: 2px 0; }
-.cf-details { margin-top: 24px; background: #f9fafb; border-radius: 10px; padding: 12px 16px; }
-.cf-details summary { cursor: pointer; font-weight: 600; }
-.cf-details ul { line-height: 1.7; padding-left: 20px; }
-.cf-compare { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-.cf-compare th, .cf-compare td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; vertical-align: top; }
-.cf-compare th { background: #eef2ff; }
-`
