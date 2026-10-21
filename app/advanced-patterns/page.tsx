@@ -30,12 +30,29 @@ class ErrorBoundary extends Component<
   { hasError: boolean }
 > {
   state = { hasError: false }
-  // 👉 手敲：static getDerivedStateFromError() 返回 { hasError: true }
-  // 👉 手敲：componentDidCatch(error, info) 记录日志
+  // 👉 子组件渲染抛错时触发，返回要更新的 state（把 hasError 置真 → 渲染降级 UI）
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  // 👉 捕获到错误后在这里上报日志（开发/监控用），不影响降级 UI
+  componentDidCatch(error: Error, info: unknown) {
+    console.error('ErrorBoundary 捕获到错误：', error, info)
+  }
   render() {
     if (this.state.hasError) return <h2>出错了，已降级显示</h2>
     return this.props.children
   }
+}
+
+// 故意抛错的孩子：点按钮后在下一次渲染抛错，用来演示 ErrorBoundary 降级
+function Bomb() {
+  const [boom, setBoom] = useState(false)
+  if (boom) throw new Error('故意抛错，用于演示 ErrorBoundary 降级')
+  return (
+    <button onClick={() => setBoom(true)} style={{ marginTop: 8 }}>
+      炸一下（触发降级）
+    </button>
+  )
 }
 
 /* ---------- 2. Portal：渲染到 body 外的弹窗 ---------- */
@@ -101,6 +118,7 @@ export default function PatternsPage() {
         <h2>ErrorBoundary</h2>
         <ErrorBoundary>
           <p>安全内容（抛出错误会降级）</p>
+          <Bomb />
         </ErrorBoundary>
       </section>
       <section>
