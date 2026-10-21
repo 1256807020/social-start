@@ -3,6 +3,7 @@
 // 【context-share · 演示页】 app/context-share/page.tsx
 // 学习模式：👉 注意下面四个组件 AddTodo / TodoStats / TodoList / ItemActions 彼此独立、互不传 props，
 // 却通过 useTodo() 共享同一份状态——这就是 Context 相比 prop drilling 的价值。
+// 文末 <details> 有 React / Vue2 / Vue3 三向对照（全局状态 / 跨组件共享篇）。
 import { useState } from 'react'
 import { TodoProvider, useTodo } from './todo-store'
 
@@ -96,6 +97,29 @@ export default function ContextSharePage() {
         <AddTodo />
         <TodoStats />
         <TodoList />
+
+        <details className="mt-6 rounded border p-3 text-sm">
+          <summary className="cursor-pointer font-semibold">📚 React / Vue2 / Vue3 三向对照（全局状态 / 跨组件共享）</summary>
+          <table className="mt-2 w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b">
+                <th className="px-2 py-1">维度</th>
+                <th className="px-2 py-1">React</th>
+                <th className="px-2 py-1">Vue2</th>
+                <th className="px-2 py-1">Vue3</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b"><td className="px-2 py-1">跨组件共享状态</td><td className="px-2 py-1">Context（createContext + &lt;Provider&gt; + useContext）+ useReducer 做 store</td><td className="px-2 py-1">无内建 DI；靠 Vuex（官方）或 provide/inject（默认非响应式）</td><td className="px-2 py-1">provide / inject（provide 一个 ref/reactive 即响应式）；或 Pinia（官方推荐）</td></tr>
+              <tr className="border-b"><td className="px-2 py-1">状态机 / store</td><td className="px-2 py-1">useReducer(reducer, init) → [state, dispatch]；reducer 纯函数（无副作用）</td><td className="px-2 py-1">Vuex mutations(同步)+actions(异步) / data()+methods</td><td className="px-2 py-1">Pinia defineStore({ state, getters, actions })；actions 可 async 直改</td></tr>
+              <tr className="border-b"><td className="px-2 py-1">免 prop drilling</td><td className="px-2 py-1">useContext 任意深度直取，无需逐层传 props</td><td className="px-2 py-1">inject 同理（但默认非响应式，要注意）</td><td className="px-2 py-1">inject 同理（响应式需 provide ref/reactive）</td></tr>
+              <tr className="border-b"><td className="px-2 py-1">消费端写法</td><td className="px-2 py-1">自定义 hook useTodo() 包 useContext，返回 state + 操作函数</td><td className="px-2 py-1">this.$store.dispatch / inject('key')</td><td className="px-2 py-1">useXxxStore() / inject('key')</td></tr>
+              <tr className="border-b"><td className="px-2 py-1">忘了「提供方」</td><td className="px-2 py-1">useContext 初始 null + 抛错（本例 useTodo 抛错，及早暴露）</td><td className="px-2 py-1">无内建；inject 拿不到易静默</td><td className="px-2 py-1">inject(key, defaultValue) 给默认值，忘了 provide 不抛错</td></tr>
+              <tr className="border-b"><td className="px-2 py-1">响应式 / 重渲染</td><td className="px-2 py-1">Context 值变→消费者重渲染；value 内联对象→每次新引用→全重渲染（性能敏感用 useMemo）</td><td className="px-2 py-1">provide/inject 默认非响应式，provide 普通值改了 inject 不更新</td><td className="px-2 py-1">provide 一个 ref/reactive 即响应式</td></tr>
+            </tbody>
+          </table>
+          <p className="mt-2 text-gray-500">📝 小结：React 没有「内置 store」，轻量全局状态 = Context(注入) + useReducer(状态机)，是 Vuex/Pinia 的「手写平替」；真做服务端状态用 React Query/SWR。Vue2 无内建 DI，跨组件共享经典靠 Vuex；Vue3 用 provide/inject 或 Pinia。三者要解决的工程问题一致（状态声明→派生→监听→重渲染），只是 API 与「自动/手动依赖追踪」不同。</p>
+        </details>
       </main>
     </TodoProvider>
   )
