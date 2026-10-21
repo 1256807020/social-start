@@ -1,16 +1,31 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 /**
  * 从 Vue2 转 React（dashboard / aggregate 篇）
- * Vue2 对照：当年用 axios 拉后端「统计接口」+ echarts 画柱状图；这里换成 useEffect+fetch 调基座 /api/{resource}/aggregate + 原生 CSS 画条形图。
+ * Vue2 对照：当年用 axios 拉后端「统计接口」+ echarts 画柱状图；这里换成 useEffect+fetch 调基座 /api/{resource}/aggregate + Tailwind 画条形图。
  *
  * 实战定位：🔧 必会 —— 这是基座「约定式文件型通用数据接口」的聚合能力检验入口。
  *           一个 json 文件 = 一张表，基座自动提供 groupBy / sum / avg / min / max 聚合，无需写后端。
  *
  * 学习模式：🔧 固定写法（useEffect 加载集合列表 + useCallback 记忆化聚合请求）、
  *          👉 练习点（理解 groupBy 分组 + count 统计，以及 sum/avg/min/max 对数值字段的含义）。
+ *
+ * 样式：已改为 Tailwind 工具类 + shadcn 组件（Select/Input/Label/Button/Table），设计令牌驱动、暗色自适应；
+ *       原 <style>{css}</style> 字符串写法已移除（全局污染 / 硬编码 hex / 暗色失效）。
  */
 
 // 聚合结果的一行：键不固定（含 groupBy 键、count、以及 sum_*/avg_*/min_*/max_* 指标列），故用宽松类型
@@ -99,125 +114,150 @@ export default function DashboardPage() {
   const metricCols = rows.length ? Object.keys(rows[0]).filter((k) => k !== groupBy && k !== 'count') : []
 
   return (
-    <main className="db-wrap">
-      <style>{css}</style>
-      <h1>📊 聚合统计仪表盘 · Dashboard</h1>
-      <p className="db-sub">
+    <main className="mx-auto max-w-[960px] p-6">
+      <h1 className="text-2xl font-semibold">📊 聚合统计仪表盘 · Dashboard</h1>
+      <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
         这是基座「约定式文件型通用数据接口」的<strong>聚合能力</strong>检验入口。 每个集合 = 一个
         data/*.json 文件 = 一张表，基座自动提供
-        <code>groupBy</code> / <code>sum</code> / <code>avg</code> / <code>min</code> / <code>max</code>{' '}
-        聚合统计，前端无需写后端。
+        <code className="cf-code">groupBy</code> / <code className="cf-code">sum</code> /{' '}
+        <code className="cf-code">avg</code> / <code className="cf-code">min</code> /{' '}
+        <code className="cf-code">max</code> 聚合统计，前端无需写后端。
       </p>
 
-      <div className="db-controls">
-        <label>
+      <div className="mb-3 flex flex-wrap items-center gap-2.5">
+        <Label>
           资源
-          <select value={resource} onChange={(e) => setResource(e.target.value)}>
-            {collections.length === 0 ? (
-              <option value={resource}>{resource}</option>
-            ) : (
-              collections.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))
-            )}
-          </select>
-        </label>
-        <label>
+          <Select value={resource} onValueChange={(value) => setResource(String(value))}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="资源" />
+            </SelectTrigger>
+            <SelectContent>
+              {collections.length === 0 ? (
+                <SelectItem value={resource}>{resource}</SelectItem>
+              ) : (
+                collections.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </Label>
+        <Label>
           分组字段 groupBy
-          <input
+          <Input
+            className="w-44"
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value)}
             placeholder="如 role / status / done"
           />
-        </label>
+        </Label>
       </div>
 
-      <div className="db-metrics">
-        <span>数值指标（可选，需数值字段）：</span>
-        <label>
-          sum
-          <input value={sumField} onChange={(e) => setSumField(e.target.value)} placeholder="字段" />
-        </label>
-        <label>
-          avg
-          <input value={avgField} onChange={(e) => setAvgField(e.target.value)} placeholder="字段" />
-        </label>
-        <label>
-          min
-          <input value={minField} onChange={(e) => setMinField(e.target.value)} placeholder="字段" />
-        </label>
-        <label>
-          max
-          <input value={maxField} onChange={(e) => setMaxField(e.target.value)} placeholder="字段" />
-        </label>
+      <div className="mb-3 flex flex-wrap items-center gap-2.5">
+        <span className="text-sm text-muted-foreground">数值指标（可选，需数值字段）：</span>
+        {(
+          [
+            ['sum', sumField, setSumField],
+            ['avg', avgField, setAvgField],
+            ['min', minField, setMinField],
+            ['max', maxField, setMaxField],
+          ] as const
+        ).map(([name, val, setter]) => (
+          <Label key={name}>
+            {name}
+            <Input
+              className="w-24"
+              value={val}
+              onChange={(e) => setter(e.target.value)}
+              placeholder="字段"
+            />
+          </Label>
+        ))}
       </div>
 
-      <div className="db-presets">
-        <span>预设：</span>
-        <button onClick={() => preset('users', 'role')}>用户按角色</button>
-        <button onClick={() => preset('users', 'status')}>用户按状态</button>
-        <button onClick={() => preset('todo', 'done')}>待办完成分布</button>
-        <button className="db-primary" onClick={() => run()}>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">预设：</span>
+        <Button variant="outline" size="sm" onClick={() => preset('users', 'role')}>
+          用户按角色
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => preset('users', 'status')}>
+          用户按状态
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => preset('todo', 'done')}>
+          待办完成分布
+        </Button>
+        <Button size="sm" onClick={() => run()}>
           查询
-        </button>
+        </Button>
       </div>
 
-      {error && <div className="db-error">查询失败：{error}</div>}
-      {loading && <div className="db-loading">聚合中…</div>}
+      {error && (
+        <div className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          查询失败：{error}
+        </div>
+      )}
+      {loading && <div className="py-3 text-muted-foreground">聚合中…</div>}
 
       {!loading && !error && rows.length > 0 && (
-        <section className="db-result">
-          <h2>分组结果（共 {rows.length} 组）</h2>
+        <section className="mt-4">
+          <h2 className="mb-2 mt-4 text-lg font-semibold">分组结果（共 {rows.length} 组）</h2>
 
-          <div className="db-bars">
+          <div className="mb-4 space-y-2">
             {rows.map((r, i) => {
               const key = String(r[groupBy] ?? '—')
               const count = Number(r.count) || 0
               const pct = maxCount ? Math.round((count / maxCount) * 100) : 0
               return (
-                <div className="db-bar" key={i}>
-                  <span className="db-bar-label">{key}</span>
-                  <div className="db-bar-track">
-                    <div className="db-bar-fill" style={{ width: `${pct}%` }} />
+                <div className="flex items-center gap-2.5 text-sm" key={i}>
+                  <span className="w-24 truncate text-right text-muted-foreground">{key}</span>
+                  <div className="h-5 flex-1 overflow-hidden rounded bg-muted">
+                    <div
+                      className="h-full rounded bg-gradient-to-r from-sky-400 to-primary"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
-                  <span className="db-bar-value">{count}</span>
+                  <span className="w-12 font-semibold">{count}</span>
                 </div>
               )
             })}
           </div>
 
-          <table className="db-table">
-            <thead>
-              <tr>
-                <th>{groupBy || 'group'}</th>
-                <th>count</th>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{groupBy || 'group'}</TableHead>
+                <TableHead>count</TableHead>
                 {metricCols.map((c) => (
-                  <th key={c}>{c}</th>
+                  <TableHead key={c}>{c}</TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map((r, i) => (
-                <tr key={i}>
-                  <td>{String(r[groupBy] ?? '—')}</td>
-                  <td>{String(r.count)}</td>
+                <TableRow key={i}>
+                  <TableCell>{String(r[groupBy] ?? '—')}</TableCell>
+                  <TableCell>{String(r.count)}</TableCell>
                   {metricCols.map((c) => (
-                    <td key={c}>{JSON.stringify(r[c])}</td>
+                    <TableCell key={c}>
+                      <code className="cf-code">{JSON.stringify(r[c])}</code>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </section>
       )}
 
       {!loading && !error && rows.length === 0 && (
-        <div className="db-empty">还没有查询结果，点上方预设或「查询」试试。</div>
+        <div className="rounded-md bg-muted/50 px-3 py-4 text-center text-muted-foreground">
+          还没有查询结果，点上方预设或「查询」试试。
+        </div>
       )}
 
-      <details className="db-details">
+      <details className="cf-prose">
         <summary>🧠 核心 vs 外壳 · 这个示例在练什么</summary>
         <ul>
           <li>
@@ -242,32 +282,3 @@ export default function DashboardPage() {
     </main>
   )
 }
-
-const css = `
-.db-wrap { max-width: 960px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; color: #1f2937; }
-.db-wrap h1 { font-size: 24px; margin: 0 0 8px; }
-.db-sub { color: #6b7280; line-height: 1.6; margin: 0 0 16px; }
-.db-sub code, .db-details code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-.db-controls, .db-metrics, .db-presets { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
-.db-controls label, .db-metrics label { display: flex; align-items: center; gap: 6px; font-size: 14px; }
-.db-controls input, .db-controls select, .db-metrics input { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 8px; }
-.db-metrics input { width: 90px; }
-.db-presets button { padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; }
-.db-presets button:hover { background: #f3f4f6; }
-.db-presets .db-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
-.db-error { background: #fef2f2; color: #b91c1c; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
-.db-loading, .db-empty { color: #6b7280; padding: 12px 0; }
-.db-result h2 { font-size: 18px; margin: 16px 0 8px; }
-.db-bars { margin-bottom: 16px; }
-.db-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14px; }
-.db-bar-label { width: 100px; text-align: right; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.db-bar-track { flex: 1; background: #f3f4f6; border-radius: 6px; height: 22px; overflow: hidden; }
-.db-bar-fill { height: 100%; background: linear-gradient(90deg, #60a5fa, #2563eb); }
-.db-bar-value { width: 48px; color: #111827; font-weight: 600; }
-.db-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.db-table th, .db-table td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
-.db-table th { background: #f9fafb; font-weight: 600; }
-.db-details { margin-top: 24px; background: #f9fafb; border-radius: 10px; padding: 12px 16px; }
-.db-details summary { cursor: pointer; font-weight: 600; }
-.db-details ul { line-height: 1.7; padding-left: 20px; }
-`
