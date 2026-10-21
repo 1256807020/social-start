@@ -47,7 +47,7 @@ export default function ArchitecturePage() {
             <tr className="border-b"><td className="px-2 py-1">UI 层</td><td className="px-2 py-1">pages/</td><td className="px-2 py-1">app/</td></tr>
             <tr className="border-b"><td className="px-2 py-1">适配层</td><td className="px-2 py-1">server/ routes</td><td className="px-2 py-1">app/api/</td></tr>
             <tr className="border-b"><td className="px-2 py-1">纯逻辑</td><td className="px-2 py-1">composables · stores</td><td className="px-2 py-1">lib/ 纯函数</td></tr>
-            <tr className="border-b"><td className="px-2 py-1">响应信封</td><td className="px-2 py-1">统一 {code,data,msg}</td><td className="px-2 py-1">lib/response 信封</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">响应信封</td><td className="px-2 py-1">统一 {"{code,data,msg}"}</td><td className="px-2 py-1">lib/response 信封</td></tr>
           </tbody>
         </table>
         <p className="mt-2 text-gray-500">📝 小结：分层核心 = 纯逻辑与框架解耦；Route Handler 极薄，改框架只改适配层。本项目所有数据均走 /api 真实接口。</p>
