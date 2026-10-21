@@ -69,13 +69,13 @@ interface TodoContextValue {
   removeTodo: (id: number) => Promise<void>
 }
 
-// 🔧 固定写法：createContext 初始值用 null（而不是一个假对象），
-// 这样"忘了包 Provider"会立刻抛错，而不是悄悄拿到空值导致难排查的 bug
+// 🔧 固定写法：createContext 必须在「组件外部 / 模块顶层」调用一次（不能放进组件里，否则每次渲染都新建 Context，消费者会全部重渲染且取不到值）；
+// 初始值用 null（而不是一个假对象）——这是「必填 Context」的标准写法：忘了包 Provider 会立刻抛错，而不是悄悄拿到空值导致难排查的 bug
 const TodoContext = createContext<TodoContextValue | null>(null)
 
 export function TodoProvider({ children }: { children: ReactNode }) {
   // 🔧 固定写法：useReducer(reducer, 初始状态)，返回 [当前状态, 派发函数]；
-  // dispatch 身份稳定，可放心放进依赖数组；action 是触发状态变化的唯一入口
+  // dispatch 身份稳定（React 保证不随渲染变），可放心放进依赖数组；action 是触发状态变化的唯一入口
   const [state, dispatch] = useReducer(reducer, initialState)
 
   // 首次挂载：从 /api/todo 拉全部（走接口，不直接读 data/*.json）
@@ -94,8 +94,8 @@ export function TodoProvider({ children }: { children: ReactNode }) {
     })()
   }, [])
 
-  // 🔧 固定写法：每个"改状态"的操作 = 先调接口持久化，成功后再 dispatch 本地 state，
-  // 保持「服务端为真相源」，避免前端状态与后端不一致
+  // ⚙️ 本项目约定（不是 React 固定写法！）：改状态 = 先调接口持久化，成功后再 dispatch 本地 state，保持「服务端为真相源」。
+  // 业界还有「乐观更新（先 dispatch 再请求，失败回滚）」「用 React Query/SWR 托管服务端状态」等做法，按需选择，并非唯一写法。
   const addTodo = useCallback(async (title: string) => {
     const r = await fetch('/api/todo', {
       method: 'POST',
@@ -126,7 +126,8 @@ export function TodoProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // 🔧 固定写法：Provider 把 value 注入，value 里放 state + 操作函数；
-  // 任意后代组件用 useContext 取出即可，无需逐层传 props（这就是"免 prop drilling"）
+  // 任意后代组件用 useContext 取出即可，无需逐层传 props（这就是"免 prop drilling"）。
+  // ⚠️ 小坑：这里 value={{...}} 每次渲染都是「新对象」，会让所有消费者跟着重渲染；性能敏感时用 useMemo 包一层。
   return (
     <TodoContext.Provider value={{ state, addTodo, toggleTodo, removeTodo }}>
       {children}
@@ -135,7 +136,7 @@ export function TodoProvider({ children }: { children: ReactNode }) {
 }
 
 // 🔧 固定写法：自定义 hook 读取 context；值为 null 时抛错，等于对"忘了包 Provider"的及早报错；
-// 组件统一从这里拿 store，不直接 import 裸 Context
+// 组件统一从这里拿 store，不直接 import 裸 Context（这样调用方永远拿不到 undefined 还不知道为啥）
 export function useTodo(): TodoContextValue {
   const ctx = useContext(TodoContext)
   if (!ctx) throw new Error('useTodo 必须在 <TodoProvider> 内使用')
