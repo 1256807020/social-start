@@ -7,6 +7,10 @@ import {
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 
 /**
  * 从 Vue 转 React（server 查询表格篇）
@@ -18,6 +22,9 @@ import {
  *
  * 学习模式：🔧 固定写法（useReactTable + flexRender 渲染；查询参数用 URLSearchParams 拼；表头点击改 sort 重新请求）、
  *          👉 练习点（理解「前端直接拼查询语法 = 后端即接口」，列表页无需写后端）。
+ *
+ * 样式：已改为 Tailwind 工具类 + shadcn 组件（Button/Input/Checkbox/Label），设计令牌驱动、暗色自适应；
+ *       原 <style>{css}</style> 字符串写法已移除（全局污染 / 硬编码 hex / 暗色失效）。
  */
 
 // 行是动态字段的普通对象，用宽松类型承接
@@ -131,10 +138,16 @@ export default function ServerQueryTablePage() {
         columnHelper.accessor((row: Row) => row[f] as unknown, {
           id: f,
           header: () => (
-            <button className="sq-sort-btn" onClick={() => toggleSort(f)} title="点击切换排序">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ml-2 font-semibold"
+              onClick={() => toggleSort(f)}
+              title="点击切换排序"
+            >
               {f}
               {sortField === f ? (sortDesc ? ' ↓' : ' ↑') : ''}
-            </button>
+            </Button>
           ),
           cell: (i) => {
             const v = i.getValue()
@@ -164,66 +177,92 @@ export default function ServerQueryTablePage() {
   }
 
   return (
-    <main className="sq-wrap">
-      <style>{css}</style>
-      <h1>🔎 服务端查询表格 · Server Query Table</h1>
-      <p className="sq-sub">
+    <main className="mx-auto max-w-[1000px] p-6">
+      <h1 className="text-2xl font-semibold">🔎 服务端查询表格 · Server Query Table</h1>
+      <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
         检验基座「约定式文件型通用数据接口」的<strong>查询能力</strong>：分页 / 排序 / 关键字 / 字段操作符(
-        <code>_in</code> / <code>_gte</code> / <code>_like</code>) / 投影(<code>fields</code>)。 排序与分页数据全部走{' '}
-        <code>/api/todo</code> 真实接口（服务端算好当前页），表格渲染复用已学的{' '}
-        <code>@tanstack/react-table</code>（headless 内核）。
+        <code className="cf-code">_in</code> / <code className="cf-code">_gte</code> /{' '}
+        <code className="cf-code">_like</code>) / 投影(<code className="cf-code">fields</code>)。 排序与分页数据全部走{' '}
+        <code className="cf-code">/api/todo</code> 真实接口（服务端算好当前页），表格渲染复用已学的{' '}
+        <code className="cf-code">@tanstack/react-table</code>（headless 内核）。
       </p>
 
-      <div className="sq-filters">
-        <label>
+      <div className="mb-3 flex flex-wrap items-center gap-2.5">
+        <Label>
           搜索(title 关键字)
-          <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="如 待办" />
-        </label>
-        <label>
+          <Input
+            className="w-40"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="如 待办"
+          />
+        </Label>
+        <Label>
           id ≥ (id_gte)
-          <input value={idGte} onChange={(e) => setIdGte(e.target.value)} placeholder="数值" />
-        </label>
-        <label>
+          <Input
+            className="w-24"
+            value={idGte}
+            onChange={(e) => setIdGte(e.target.value)}
+            placeholder="数值"
+          />
+        </Label>
+        <Label>
           title 包含 (title_like)
-          <input value={titleLike} onChange={(e) => setTitleLike(e.target.value)} placeholder="子串" />
-        </label>
-        <label>
+          <Input
+            className="w-28"
+            value={titleLike}
+            onChange={(e) => setTitleLike(e.target.value)}
+            placeholder="子串"
+          />
+        </Label>
+        <Label>
           done (_in)
-          <select value={doneIn} onChange={(e) => setDoneIn(e.target.value)}>
+          <select
+            className="rounded-md border border-input bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+            value={doneIn}
+            onChange={(e) => setDoneIn(e.target.value)}
+          >
             <option value="">不限</option>
             <option value="true">已完成(true)</option>
             <option value="false">未完成(false)</option>
             <option value="true,false">两者</option>
           </select>
-        </label>
-        <button className="sq-primary" onClick={() => load(1)}>
-          查询
-        </button>
-        <button className="sq-ghost" onClick={resetFilters}>
+        </Label>
+        <Button onClick={() => load(1)}>查询</Button>
+        <Button variant="outline" onClick={resetFilters}>
           重置
-        </button>
+        </Button>
       </div>
 
-      <div className="sq-proj">
-        <span>投影 fields：</span>
+      <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
+        <span className="text-muted-foreground">投影 fields：</span>
         {ALL_FIELDS.map((f) => (
-          <label key={f} className="sq-check">
-            <input type="checkbox" checked={fields.includes(f)} onChange={() => toggleField(f)} /> {f}
-          </label>
+          <Label key={f} className="font-normal">
+            <Checkbox checked={fields.includes(f)} onCheckedChange={() => toggleField(f)} />
+            {f}
+          </Label>
         ))}
       </div>
 
-      {error && <div className="sq-error">查询失败：{error}</div>}
+      {error && (
+        <div className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          查询失败：{error}
+        </div>
+      )}
       {/* 无感刷新：加载时保留旧行，只叠一个不占布局的顶部进度条，不用会挤表格的「查询中…」文案块 */}
-      {loading && <div className="sq-loading-bar" aria-hidden />}
+      {loading && (
+        <div className="fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden">
+          <div className="h-full w-1/3 animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+        </div>
+      )}
 
       {/* 加载中给表格降透明度表示"刷新中"，但内容仍在（stale-while-revalidate），避免清空造成的跳动 */}
-      <table className={`sq-table${loading ? ' is-loading' : ''}`}>
+      <table className={`w-full border-collapse text-sm transition-opacity ${loading ? 'opacity-50' : ''}`}>
         <thead>
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
               {hg.headers.map((h) => (
-                <th key={h.id} className="sq-th">
+                <th key={h.id} className="border border-border bg-muted px-2.5 py-2 text-left font-semibold">
                   {flexRender(h.column.columnDef.header, h.getContext())}
                 </th>
               ))}
@@ -232,9 +271,9 @@ export default function ServerQueryTablePage() {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="sq-row">
+            <tr key={row.id} className="even:bg-muted/50">
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="sq-td">
+                <td key={cell.id} className="border border-border px-2.5 py-2">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
@@ -242,7 +281,7 @@ export default function ServerQueryTablePage() {
           ))}
           {!loading && rows.length === 0 && (
             <tr>
-              <td className="sq-empty" colSpan={fields.length || 1}>
+              <td className="border border-border px-2.5 py-4 text-center text-muted-foreground" colSpan={fields.length || 1}>
                 无数据
               </td>
             </tr>
@@ -250,19 +289,25 @@ export default function ServerQueryTablePage() {
         </tbody>
       </table>
 
-      <div className="sq-pager">
-        <button disabled={page <= 1} onClick={() => load(page - 1)}>
+      <div className="mt-3 flex items-center gap-3 text-sm">
+        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => load(page - 1)}>
           上一页
-        </button>
+        </Button>
         <span>
           {page} / {totalPages}（共 {total} 条）
         </span>
-        <button disabled={page >= totalPages} onClick={() => load(page + 1)}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={page >= totalPages}
+          onClick={() => load(page + 1)}
+        >
           下一页
-        </button>
-        <label>
+        </Button>
+        <Label>
           每页
           <select
+            className="rounded-md border border-input bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             value={pageSize}
             onChange={(e) => {
               const ps = Number(e.target.value)
@@ -275,10 +320,10 @@ export default function ServerQueryTablePage() {
             <option value={8}>8</option>
             <option value={20}>20</option>
           </select>
-        </label>
+        </Label>
       </div>
 
-      <details className="sq-details">
+      <details className="cf-prose">
         <summary>🧠 核心 vs 外壳 · 这个示例在练什么</summary>
         <ul>
           <li>
@@ -302,37 +347,3 @@ export default function ServerQueryTablePage() {
     </main>
   )
 }
-
-const css = `
-.sq-wrap { max-width: 1000px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; color: #1f2937; }
-.sq-wrap h1 { font-size: 24px; margin: 0 0 8px; }
-.sq-sub { color: #6b7280; line-height: 1.6; margin: 0 0 16px; }
-.sq-sub code, .sq-details code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-.sq-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
-.sq-filters label { display: flex; align-items: center; gap: 6px; font-size: 14px; }
-.sq-filters input, .sq-filters select { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 8px; }
-.sq-primary { padding: 6px 14px; border: none; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; }
-.sq-ghost { padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; }
-.sq-proj { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 14px; }
-.sq-check { display: flex; align-items: center; gap: 4px; }
-.sq-error { background: #fef2f2; color: #b91c1c; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
-/* 无感刷新：顶部细进度条 fixed 定位，绝不挤占布局；刷新时表格只降透明度、不清空内容，避免跳动 */
-.sq-loading-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60;
-  background: linear-gradient(90deg, transparent, #2563eb, #60a5fa, transparent);
-  animation: sq-loadbar .9s linear infinite; }
-@keyframes sq-loadbar { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-.sq-table.is-loading { opacity: .5; }
-.sq-table { width: 100%; border-collapse: collapse; font-size: 14px; transition: opacity .18s ease; }
-.sq-th { background: #f9fafb; font-weight: 600; border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
-.sq-row:nth-child(even) { background: #fafafa; }
-.sq-td { border: 1px solid #e5e7eb; padding: 8px 10px; }
-.sq-empty { text-align: center; color: #9ca3af; padding: 16px; }
-.sq-sort-btn { background: none; border: none; cursor: pointer; font: inherit; font-weight: 600; color: #111827; padding: 0; }
-.sq-pager { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 14px; }
-.sq-pager button { padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; }
-.sq-pager button:disabled { opacity: 0.4; cursor: not-allowed; }
-.sq-pager label { display: flex; align-items: center; gap: 6px; }
-.sq-details { margin-top: 24px; background: #f9fafb; border-radius: 10px; padding: 12px 16px; }
-.sq-details summary { cursor: pointer; font-weight: 600; }
-.sq-details ul { line-height: 1.7; padding-left: 20px; }
-`
