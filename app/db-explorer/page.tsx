@@ -1,16 +1,29 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 /**
  * 从 Vue2 转 React（db-explorer 篇）
- * Vue2 对照：当年用 axios 拿后端「接口列表」+ element-ui 表格渲染；这里换成 useEffect + fetch + 原生表格。
+ * Vue2 对照：当年用 axios 拿后端「接口列表」+ element-ui 表格渲染；这里换成 useEffect + fetch + shadcn 表格。
  *
  * 实战定位：🔧 必会 —— 这是基座「约定式文件型通用数据接口」的"控制台 / 元数据"页，
  *           一眼看全所有集合（= data/*.json 文件）及其【自动推断】的字段结构，是最能检验基座能力的入口。
  *
  * 学习模式：🔧 固定写法（useEffect+fetch 列表查询 + alive 防竞态 / StrictMode 双调用）、
  *          👉 练习点（点开集合看基座 inferSchema 自动推断的字段类型与示例值）。
+ *
+ * 样式：已改为 Tailwind 工具类 + shadcn 组件（Button/Input/Table），设计令牌驱动、暗色自适应；
+ *       原 <style>{css}</style> 字符串写法已移除（全局污染 / 硬编码 hex / 暗色失效）。
  */
 
 // ── 类型小课：联合类型(union) vs 基础类型 ──
@@ -143,140 +156,174 @@ export default function DbExplorerPage() {
   const previewColumns = detail?.schema.map((s) => s.field) ?? []
 
   return (
-    <main className="dbx-wrap">
-      <style>{css}</style>
-      <h1>🗂 集合管理器 · DB Explorer</h1>
-      <p className="dbx-sub">
+    <main className="mx-auto max-w-[960px] p-6">
+      <h1 className="text-2xl font-semibold">🗂 集合管理器 · DB Explorer</h1>
+      <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
         这是基座「约定式文件型通用数据接口」的元数据控制台。
-        <b>每个集合 = 一个 data/*.json 文件 = 一套完整 CRUD 接口</b>。
+        <b className="text-foreground">每个集合 = 一个 data/*.json 文件 = 一套完整 CRUD 接口</b>。
         下方列出全部集合，点开可看基座<strong>自动推断</strong>的字段结构与前 5 条预览。
       </p>
 
-      <div className="dbx-toolbar">
-        <button onClick={() => window.location.reload()}>🔄 刷新</button>
-        <span className="dbx-hint">共 {list.length} 个集合</span>
+      <div className="mb-3 flex items-center gap-3">
+        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+          🔄 刷新
+        </Button>
+        <span className="text-sm text-muted-foreground">共 {list.length} 个集合</span>
       </div>
 
-      {error && <div className="dbx-error">加载失败：{error}</div>}
-      {loading && <div className="dbx-loading">加载中…</div>}
+      {error && (
+        <div className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          加载失败：{error}
+        </div>
+      )}
+      {loading && <div className="py-3 text-muted-foreground">加载中…</div>}
 
       {!loading && !error && (
-        <table className="dbx-table">
-          <thead>
-            <tr>
-              <th>集合名（= data/&lt;name&gt;.json）</th>
-              <th>记录数</th>
-              <th>体积</th>
-              <th>更新时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>集合名（= data/&lt;name&gt;.json）</TableHead>
+              <TableHead>记录数</TableHead>
+              <TableHead>体积</TableHead>
+              <TableHead>更新时间</TableHead>
+              <TableHead>操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {list.length === 0 && (
-              <tr>
-                <td colSpan={5} className="dbx-empty">
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
                   暂无集合，用下方表单新建一个试试 👇
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {list.map((c) => (
-              <tr key={c.name} className={activeName === c.name ? 'dbx-active' : ''}>
-                <td>
-                  <button className="dbx-link" onClick={() => openDetail(c.name)}>
+              <TableRow key={c.name} data-state={activeName === c.name ? 'selected' : undefined}>
+                <TableCell>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0"
+                    onClick={() => openDetail(c.name)}
+                  >
                     {c.name}
-                  </button>
-                </td>
-                <td>{c.count}</td>
-                <td>{c.sizeText}</td>
-                <td>{c.updatedAt}</td>
-                <td>
-                  <button className="dbx-btn" onClick={() => openDetail(c.name)}>
+                  </Button>
+                </TableCell>
+                <TableCell>{c.count}</TableCell>
+                <TableCell>{c.sizeText}</TableCell>
+                <TableCell>{c.updatedAt}</TableCell>
+                <TableCell>
+                  <Button variant="outline" size="sm" onClick={() => openDetail(c.name)}>
                     查看
-                  </button>
-                  <button className="dbx-btn dbx-danger" onClick={() => removeCollection(c.name)}>
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="ml-1.5"
+                    onClick={() => removeCollection(c.name)}
+                  >
                     删除
-                  </button>
-                </td>
-              </tr>
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
 
-      <div className="dbx-create">
-        <input
+      <div className="my-4 flex gap-2">
+        <Input
           placeholder="新集合名（字母/数字/_/-）"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
         />
-        <button onClick={createCollection}>➕ 新建空集合（POST 触发自动建库）</button>
+        <Button onClick={createCollection}>➕ 新建空集合（POST 触发自动建库）</Button>
       </div>
 
-      {detailLoading && <div className="dbx-loading">加载集合详情…</div>}
-      {detailError && <div className="dbx-error">详情加载失败：{detailError}</div>}
+      {detailLoading && <div className="py-3 text-muted-foreground">加载集合详情…</div>}
+      {detailError && (
+        <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          详情加载失败：{detailError}
+        </div>
+      )}
 
       {detail && (
-        <section className="dbx-detail">
-          <h2>
-            📋 {detail.name} <small>（{detail.total} 条 · {detail.file}）</small>
+        <section className="mt-5">
+          <h2 className="mb-2 mt-4 text-lg font-semibold">
+            📋 {detail.name}{' '}
+            <small className="text-sm font-normal text-muted-foreground">
+              （{detail.total} 条 · {detail.file}）
+            </small>
           </h2>
 
-          <h3>自动推断字段结构（schema）</h3>
-          <table className="dbx-table">
-            <thead>
-              <tr>
-                <th>字段</th>
-                <th>类型</th>
-                <th>非空数</th>
-                <th>示例值</th>
-              </tr>
-            </thead>
-            <tbody>
+          <h3 className="mb-1.5 mt-4 text-[15px] font-semibold text-foreground/80">
+            自动推断字段结构（schema）
+          </h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>字段</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead>非空数</TableHead>
+                <TableHead>示例值</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {detail.schema.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="dbx-empty">
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
                     集合为空，暂无字段可推断
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {detail.schema.map((f) => (
-                <tr key={f.field}>
-                  <td>{f.field}</td>
-                  <td>{f.types.join(' / ') || '—'}</td>
-                  <td>{f.filled}</td>
-                  <td>
-                    <code>{f.sample === undefined ? '—' : JSON.stringify(f.sample)}</code>
-                  </td>
-                </tr>
+                <TableRow key={f.field}>
+                  <TableCell>{f.field}</TableCell>
+                  <TableCell>{f.types.join(' / ') || '—'}</TableCell>
+                  <TableCell>{f.filled}</TableCell>
+                  <TableCell>
+                    <code className="cf-code">
+                      {f.sample === undefined ? '—' : JSON.stringify(f.sample)}
+                    </code>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
 
-          <h3>前 5 条预览</h3>
+          <h3 className="mb-1.5 mt-4 text-[15px] font-semibold text-foreground/80">前 5 条预览</h3>
           {detail.preview.length === 0 ? (
-            <div className="dbx-empty">集合为空（无记录）</div>
+            <div className="rounded-md bg-muted/50 px-3 py-4 text-center text-muted-foreground">
+              集合为空（无记录）
+            </div>
           ) : (
-            <table className="dbx-table">
-              <thead>
-                <tr>{previewColumns.map((col) => <th key={col}>{col}</th>)}</tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {previewColumns.map((col) => (
+                    <TableHead key={col}>{col}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {detail.preview.map((row, i) => (
-                  <tr key={i}>
+                  <TableRow key={i}>
                     {previewColumns.map((col) => (
-                      <td key={col}>
-                        <code>{row[col] === undefined ? '—' : JSON.stringify(row[col])}</code>
-                      </td>
+                      <TableCell key={col}>
+                        <code className="cf-code">
+                          {row[col] === undefined ? '—' : JSON.stringify(row[col])}
+                        </code>
+                      </TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
         </section>
       )}
 
-      <details className="dbx-details">
+      <details className="cf-prose">
         <summary>🧠 核心 vs 外壳 · 这个示例在练什么</summary>
         <ul>
           <li>
@@ -301,35 +348,3 @@ export default function DbExplorerPage() {
     </main>
   )
 }
-
-const css = `
-.dbx-wrap { max-width: 960px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; color: #1f2937; }
-.dbx-wrap h1 { font-size: 24px; margin: 0 0 8px; }
-.dbx-sub { color: #6b7280; line-height: 1.6; margin: 0 0 16px; }
-.dbx-sub b { color: #111827; }
-.dbx-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.dbx-hint { color: #9ca3af; font-size: 13px; }
-.dbx-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 16px; }
-.dbx-table th, .dbx-table td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
-.dbx-table th { background: #f9fafb; font-weight: 600; }
-.dbx-table tr.dbx-active { background: #eff6ff; }
-.dbx-link { background: none; border: none; color: #2563eb; cursor: pointer; padding: 0; font-size: 14px; }
-.dbx-btn { margin-right: 6px; padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; }
-.dbx-btn:hover { background: #f3f4f6; }
-.dbx-danger { color: #dc2626; border-color: #fecaca; }
-.dbx-danger:hover { background: #fef2f2; }
-.dbx-error { background: #fef2f2; color: #b91c1c; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
-.dbx-loading { color: #6b7280; padding: 12px 0; }
-.dbx-empty { color: #9ca3af; text-align: center; padding: 16px; }
-.dbx-create { display: flex; gap: 8px; margin: 16px 0; }
-.dbx-create input { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; flex: 1; }
-.dbx-create button { padding: 8px 14px; border: none; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; }
-.dbx-detail { margin-top: 20px; }
-.dbx-detail h2 { font-size: 18px; margin: 16px 0 8px; }
-.dbx-detail h3 { font-size: 15px; margin: 16px 0 6px; color: #374151; }
-.dbx-detail small { color: #9ca3af; font-weight: 400; }
-.dbx-details { margin-top: 24px; background: #f9fafb; border-radius: 10px; padding: 12px 16px; }
-.dbx-details summary { cursor: pointer; font-weight: 600; }
-.dbx-details ul { line-height: 1.7; padding-left: 20px; }
-.dbx-details code { background: #eef2ff; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-`
