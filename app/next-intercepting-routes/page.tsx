@@ -29,6 +29,12 @@ export default function PhotoList() {
       <p className="text-xs text-gray-400">
         试试：点一条 → 弹层；然后按 F5 刷新 → 变成完整详情页。
       </p>
+      <p className="text-sm">
+        <Link className="underline" href="/next-intercepting-routes/albums">
+          → 再看 (..) 上一级拦截的示例
+        </Link>
+        （目标页与本目录同级，所以拦截器要写在子目录里往上退一级）
+      </p>
     </section>
   )
 }
