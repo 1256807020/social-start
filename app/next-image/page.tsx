@@ -52,6 +52,55 @@ export default function NextImagePage() {
         </p>
       </section>
 
+      {/* ④ placeholder 模糊占位 + quality 质量 */}
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold">④ placeholder 模糊占位 + quality</h2>
+        <Image
+          src="/avatar.png"
+          alt="带模糊占位的图"
+          width={96}
+          height={96}
+          quality={75}
+          placeholder="blur"
+          // blurDataURL：静态 import 的图会自动生成，用 public 路径时必须自己给一个极小的占位图
+          blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        />
+        <p className="text-xs text-gray-500">
+          <code>placeholder=&quot;blur&quot;</code> 会在图加载完成前先显示一张模糊小图，体验更平滑；
+          <code>quality</code>（1–100，默认 75）控制压缩质量，数字越小文件越小。
+        </p>
+      </section>
+
+      {/* ⑤ 配置进阶：这些都在 next.config 里，光写组件属性没用 */}
+      <section className="space-y-2 rounded border bg-amber-50 p-4">
+        <h2 className="text-lg font-semibold">⑤ 配置进阶（在 next.config.mjs 里）</h2>
+        <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
+          <li>
+            <strong>前提坑</strong>：基座默认有 <code>images.unoptimized = true</code>（原图直出）。
+            只要它还开着，下面所有优化配置<strong>全部不生效</strong> —— 本分支已把它去掉。
+          </li>
+          <li>
+            <code>remotePatterns</code>：远程图域名白名单。没登记就用外链图 → <strong>直接报错</strong>。
+            这是 next/image 最高频的报错来源。
+          </li>
+          <li>
+            <code>formats</code>：输出格式，通常 <code>{'['}&apos;image/avif&apos;, &apos;image/webp&apos;{']'}</code>。
+            AVIF 更小但编码慢。
+          </li>
+          <li>
+            <code>deviceSizes</code>：生成哪些「整屏宽度」档位（配合 <code>sizes</code> 做响应式）。
+          </li>
+          <li>
+            <code>imageSizes</code>：生成哪些「小图」档位（头像/缩略图）。
+          </li>
+        </ul>
+        <p className="text-xs text-gray-500">
+          看效果：查看图片的实际 <code>src</code>，会是{' '}
+          <code>/_next/image?url=...&amp;w=...&amp;q=75</code> 这种形式，
+          说明走了优化管线（若还是 <code>/avatar.png</code> 原路径，说明 unoptimized 仍开着）。
+        </p>
+      </section>
+
       <details className="rounded border p-4 text-sm">
         <summary className="cursor-pointer font-semibold">Vue / Nuxt / React 三向对照 + 总结</summary>
         <table className="mt-3 w-full border-collapse text-left">
