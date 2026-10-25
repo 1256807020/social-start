@@ -73,7 +73,10 @@ export default function ConventionIndex() {
           总结：三个要点 ——
           ① error.tsx <strong>必须是客户端组件</strong>（要能点「重试」）；
           ② error.tsx 抓不到<strong>同段 layout 自己</strong>的错，那种错要由<strong>上一层</strong>的 error.tsx 或根 global-error.tsx 兜；
-          ③ notFound() 会去找<strong>最近的</strong> not-found.tsx。
+          ③ notFound() 会去找<strong>最近的</strong> not-found.tsx；
+          ④ error.tsx 里的「重试」要<strong>进阶</strong>：<code>reset()</code> 只重渲染、
+          不重取数，错误若是取数导致的要配合{' '}
+          <code>router.refresh()</code> 并包在 <code>startTransition</code> 里（见 boom 目录的 error.tsx）。
         </p>
       </details>
     </main>
