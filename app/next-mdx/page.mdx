@@ -1,0 +1,52 @@
+export const metadata = { title: 'MDX 内容管线' }
+
+export const Callout = ({ children }) => (
+  <div className="my-3 rounded border-l-4 border-sky-500 bg-sky-50 p-3 text-sm text-sky-900">{children}</div>
+)
+
+{/* 这个文件本身就是页面：app/next-mdx/page.mdx → 路由 /next-mdx */}
+
+# MDX 内容管线 · /next-mdx
+
+**MDX = Markdown + JSX**：既能写文章，又能在文章里直接插入 React 组件。
+它是「文章站 / 文档站 / 博客」最省事的内容方案 —— 内容就是文件，不用建表、不用后台。
+
+## 一、从 Vue 侧看过来
+
+| 需求 | Vue / Nuxt 生态 | Next.js |
+|---|---|---|
+| Markdown 变页面 | `@nuxtjs/mdx`、`vite-plugin-mdx`、`unplugin-vue-markdown` | `@next/mdx`（官方） |
+| 正文排版样式 | `@tailwindcss/typography` 的 `prose` | 同理，或自定义 `mdx-components` |
+| 文章里嵌组件 | 需要额外配置 | 天然支持（这就是 MDX 的本意） |
+
+差别不大，思路一致：**Markdown 当内容源，构建期编译成组件树**。
+
+## 二、三步接好 MDX
+
+1. 装依赖：`@next/mdx`、`@mdx-js/react`、`@mdx-js/loader`
+2. `next.config` 里用 `createMDX` 包一层，并把 `md` / `mdx` 加进 `pageExtensions`
+3. 项目根目录放一个 `mdx-components.tsx`
+
+做完之后，**任意 `page.mdx` 直接就是一个页面** —— 本文件就是 `/next-mdx` 这个路由。
+
+<Callout>
+关键点：`pageExtensions` 不加上 `md`/`mdx`，`.mdx` 文件不会被当成页面，这是最常见的坑。
+</Callout>
+
+## 三、文章里嵌组件（MDX 的杀手锏）
+
+上面那个蓝色提示框不是 Markdown 语法，而是一个货真价实的 React 组件 `Callout`，
+就定义在本文件顶部。这意味着你的文章可以内嵌图表、demo、交互控件 —— 而不只是文字。
+
+## 四、什么时候该用 MDX
+
+- 博客 / 文档 / 课程讲义 / 产品说明 —— 内容由人写、结构固定、更新频繁
+- 希望内容进 Git、能 Code Review、能版本化
+
+不适合的场景：内容由终端用户在后台动态创建 —— 那应该存数据库，
+走 `/api` 读写（这才是本仓库 `basic` 基座的强项）。
+
+## 五、总结
+
+MDX 解决的是「**写得舒服**」：作者写 Markdown，开发者提供组件，二者在同一文件里合体。
+与基座的 JSON CRUD 不是替代关系 —— **结构化业务数据走 `/api`，表达型长文走 MDX**。
