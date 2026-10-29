@@ -46,6 +46,7 @@ function TodoApp() {
   const [page, setPage] = useState(1)
   const [title, setTitle] = useState('')
   const [editing, setEditing] = useState<{ id: number; title: string } | null>(null)
+  // useToast 固定用法：Chakra 钩子，必须在 <ChakraProvider> 内部组件里调用
   const toast = useToast()
 
   // 取数：分页拉 /api/todo（sort=-id 最新在前），复用 basic 真接口，绝不直读 data/*.json
@@ -97,6 +98,7 @@ function TodoApp() {
       <Heading size="lg" mb={4}>Chakra UI · todo CRUD · app/chakra-ui</Heading>
       <Text fontSize="sm" color="gray.500" mb={4}>国际主流组件库（基于 emotion）。下方 CRUD 复用 /api/todo。</Text>
 
+      {/* 表单区：<Input>/<Button> 都是 Chakra 组件；colorScheme 一键套主题色（固定写法），onKeyDown 支持回车提交 */}
       <HStack mb={4}>
         <Input placeholder="新待办标题" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
         <Button colorScheme="blue" onClick={add}>新增</Button>
@@ -120,6 +122,7 @@ function TodoApp() {
                   }}
                 />
               ) : (
+                {/* as 是 Chakra 多态固定写法：按条件把 <Text> 渲染成 <del>（完成划线）或 <span> */}
                 <Text flex="1" as={t.done ? 'del' : 'span'} onDoubleClick={() => setEditing({ id: t.id, title: t.title })}>
                   #{t.id} {t.title}
                 </Text>
@@ -181,9 +184,11 @@ function TodoApp() {
   )
 }
 
+// 【固定写法】Chakra UI 整页根必须包一层 <ChakraProvider>（注入主题与样式上下文），只包这一次
 export default function ChakraUiPage() {
   return (
     <ChakraProvider>
+      {/* 外层 Box 用 bg/minH 等 props 控制布局样式（替代手写 CSS，固定写法） */}
       <Box bg="gray.50" minH="100vh">
         <TodoApp />
       </Box>
