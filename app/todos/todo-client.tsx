@@ -7,8 +7,11 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import type { Todo } from '@/types/todo'
 
-export type Todo = { id: number; title: string; done?: boolean; parentId?: number }
+// 📌 类型统一放 types/todo.ts（与全站其他页面共用一份）；
+//    这里再导出一次，兼容既有 `import { type Todo } from './todo-client'` 的写法。
+export type { Todo }
 
 export function TodoClient({ initial, page, totalPages, total }: { initial: Todo[]; page: number; totalPages: number; total: number }) {
   const router = useRouter()
