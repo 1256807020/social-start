@@ -4,9 +4,12 @@
 // 特点：一个 .tsx 文件内用 useEffect + fetch 把"查 / 增 / 改 / 删"全包了，
 // 最直观，最适合初学 CRUD。所有数据交互都走接口 /api/todo，不直接读 data/*.json。
 import { useCallback, useEffect, useState } from 'react'
+import type { Todo } from '@/types/todo'
+import type { ApiListResult } from '@/types/api'
 
 export default function TodoClientPage() {
-  const [todos, setTodos] = useState<any[]>([])
+  // 📌 生产写法：state 用真实类型（不用 any）
+  const [todos, setTodos] = useState<Todo[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const pageSize = 8
@@ -16,7 +19,8 @@ export default function TodoClientPage() {
   // 查（GET /api/todo）
   const load = useCallback(async (p: number) => {
     const r = await fetch(`/api/todo?page=${p}&pageSize=${pageSize}&sort=-id`)
-    const j = await r.json()
+    // 📌 生产写法：fetch 没有泛型，用 `as` 收窄成具体信封类型。
+    const j = (await r.json()) as ApiListResult<Todo>
     setTodos(j.data || [])
     setTotal(j.total || 0)
     setPage(p)
@@ -38,7 +42,7 @@ export default function TodoClientPage() {
   }
 
   // 改状态（PATCH /api/todo/:id，增量合并）
-  const toggle = async (t: any) => {
+  const toggle = async (t: Todo) => {
     await fetch(`/api/todo/${t.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
