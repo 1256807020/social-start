@@ -9,24 +9,29 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { TreeNode } from './tree-node'
+import type { Todo, TodoNode, ImageItem, Captcha } from '@/types/todo'
+import type { ApiListResult, ApiResult } from '@/types/api'
 
 export default function BasicDemo() {
-  const [todos, setTodos] = useState<any[]>([])
+  // 📌 生产写法：state 用真实类型（不用 any）——写错字段名编辑器立刻报错。
+  const [todos, setTodos] = useState<Todo[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const pageSize = 8
   const [title, setTitle] = useState('')
   const [parentId, setParentId] = useState('')
   const [editing, setEditing] = useState<number | null>(null)
-  const [images, setImages] = useState<any[]>([])
-  const [cap, setCap] = useState<{ captchaId: string; image: string } | null>(null)
+  const [images, setImages] = useState<ImageItem[]>([])
+  const [cap, setCap] = useState<Captcha | null>(null)
   const [code, setCode] = useState('')
   const [capMsg, setCapMsg] = useState('')
-  const [tree, setTree] = useState<any[]>([])
+  const [tree, setTree] = useState<TodoNode[]>([])
 
   const loadTodos = useCallback(async (p: number) => {
     const r = await fetch(`/api/todo?page=${p}&pageSize=${pageSize}&sort=-id`)
-    const j = await r.json()
+    // 📌 生产写法：fetch 没有泛型，用 `as` 从 any 收窄成具体信封类型。
+    const j = (await r.json()) as ApiListResult<Todo>
     setTodos(j.data || [])
     setTotal(j.total || 0)
     setPage(p)
@@ -35,14 +40,14 @@ export default function BasicDemo() {
   const loadImages = useCallback(async () => {
     const r = await fetch('/api/image/list?pageSize=12')
     if (!r.ok) return
-    const j = await r.json().catch(() => null)
+    const j = (await r.json().catch(() => null)) as ApiListResult<ImageItem> | null
     if (j) setImages(j.data || [])
   }, [])
 
   const loadCap = useCallback(async () => {
     const r = await fetch('/api/captcha')
     if (!r.ok) return
-    const j = await r.json().catch(() => null)
+    const j = (await r.json().catch(() => null)) as ApiResult<Captcha> | null
     if (j) setCap(j.data)
     setCode('')
     setCapMsg('')
@@ -51,7 +56,7 @@ export default function BasicDemo() {
   const loadTree = useCallback(async () => {
     const r = await fetch('/api/todo?tree=1')
     if (!r.ok) return
-    const j = await r.json().catch(() => null)
+    const j = (await r.json().catch(() => null)) as ApiListResult<TodoNode> | null
     if (j) setTree(j.data || [])
   }, [])
 
@@ -86,7 +91,7 @@ export default function BasicDemo() {
     loadTree()
   }
 
-  const startEdit = (t: any) => {
+  const startEdit = (t: Todo) => {
     setEditing(t.id)
     setTitle(t.title)
     setParentId(String(t.parentId ?? 0))
@@ -121,27 +126,11 @@ export default function BasicDemo() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ captchaId: cap.captchaId, code }),
     })
-    const j = await r.json()
+    const j = (await r.json()) as ApiResult<{ success?: boolean }>
     setCapMsg(j.data?.success ? '✅ 校验通过' : '❌ 验证码错误')
   }
 
   const totalPages = Math.max(Math.ceil(total / pageSize), 1)
-
-  const TreeNode = ({ node, depth = 0 }: { node: any; depth?: number }) => (
-    <li>
-      <span style={{ paddingLeft: depth * 16 }} className="inline-block">
-        <span className="text-gray-400">└</span> #{node.id} {node.title}
-        {node.done ? ' ✅' : ''}
-      </span>
-      {node.children?.length > 0 && (
-        <ul>
-          {node.children.map((c: any) => (
-            <TreeNode key={c.id} node={c} depth={depth + 1} />
-          ))}
-        </ul>
-      )}
-    </li>
-  )
 
   return (
     <main className="mx-auto max-w-6xl p-6 space-y-6">
