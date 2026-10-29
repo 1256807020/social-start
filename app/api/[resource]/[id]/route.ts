@@ -19,7 +19,9 @@ export async function GET(
     await withApi(async () => {
       assertName(resource)
       const res = await handlers.detail(resource, id)
-      if (q.populate) await populateRecords([res.body.data], q.populate)
+      // populateRecords 返回「复制后的新数组」（不原地改，避免污染 db 缓存），必须接住返回值取 [0]
+      // （单条记录被包在数组里传进去，返回的也是数组，取第一个元素）
+      if (q.populate) res.body.data = (await populateRecords([res.body.data], q.populate))[0]
       return res
     }),
   )
