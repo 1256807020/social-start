@@ -48,5 +48,6 @@ work
 work/*
 # vitest 隔离测试数据
 .vitest-data/
-web
-scripts
+
+/scripts/
+/web/
