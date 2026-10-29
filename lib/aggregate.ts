@@ -4,7 +4,7 @@
  * 不修改 lib/crud.ts / lib/json-db.ts，纯独立模块；路由层调用本文件即可。
  */
 import * as db from './json-db'
-import { applyQuery } from './query'
+import { applyFilter } from './query'
 
 function sum(arr: any[], f: string) {
   return arr.reduce((s, i) => s + (Number(i?.[f]) || 0), 0)
@@ -21,8 +21,10 @@ function max(arr: any[], f: string) {
 
 export async function aggregate(resource: string, q: Record<string, any>) {
   const list = await db.read(resource)
-  // 复用查询引擎做过滤 / 关键字，但聚合本身忽略分页与树
-  // 复用查询引擎做字段过滤，但剔除聚合专用参数（避免被当成普通字段过滤）
+  // 复用 query 的字段过滤能力，但剔除聚合专用参数（避免被当成普通字段过滤）
+  // ⚠ 关键：这里必须用 applyFilter（只过滤、不分页）。
+  //    若误用 applyQuery，会被默认 pageSize=10 截断 → 只统计前 10 条，
+  //    导致「集合有 21 条但 count 合计只有 10」的假数据。
   const q2 = { ...q }
   for (const k of [
     'page',
@@ -42,7 +44,7 @@ export async function aggregate(resource: string, q: Record<string, any>) {
   ]) {
     delete (q2 as Record<string, any>)[k]
   }
-  const filtered = applyQuery(list, q2).data
+  const filtered = applyFilter(list, q2)
 
   const sumFields = String(q.sum || '').split(',').map((s) => s.trim()).filter(Boolean)
   const avgFields = String(q.avg || '').split(',').map((s) => s.trim()).filter(Boolean)
