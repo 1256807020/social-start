@@ -1,16 +1,26 @@
 // ───────────────────────────────────────────────────────────
-// 从 Vue 转 React（UI 库篇）· Chakra UI（基于 emotion 的组件库）
-// · Vue2 对照：组件库思路同 element-ui / ant-design-vue ——「开箱即用组件 + 主题变量」；Chakra 的 props 风格 ≈ Vue 的组件 attr；
-// · Vue3 对照：同上，国内常用 element-plus；Chakra 在 React 侧定位类似「自带设计系统的组件库」；
-// · React 对照：ChakraProvider 包住全局，组件用 props 控制样式（colorScheme / as），本例 CRUD 走 /api/todo。
-// 📌 实战定位：组件库【了解即可·进阶】；你已熟 antd / mantle / shadcn，Chakra 作为「另一流派」认领即可，不必深练。
-// 🧭 学习模式：🔧固定写法=ChakraProvider 包裹 + 组件 props 控制；👉=练习点（已填，跑通即懂）；文末 <details> 有 Vue2/Vue3/React 三向对照。
+// 【learn/chakra-ui】Chakra UI 组件库实战（§16 页头三段式）
+//
+// 1) 一句话定位
+//    React 侧「自带设计系统、用 props 驱动样式」的组件库流派代表作；本支在
+//    ChakraProvider 包裹下用 /api/todo 跑通一套 CRUD。
+//    （Vue 语境对照：相当于 React 版的 element-plus / ant-design-vue —— 开箱即用组件 + 主题变量）
+//
+// 2) 关键 API / 钩子（记住这几个就够）
+//    · ChakraProvider  全局包裹，提供主题与样式上下文
+//    · <Box>/<Container>/<Stack> 布局原语，用 props 控制间距/对齐（替代手写 CSS）
+//    · <Input>/<Button>/<Checkbox> 表单组件，colorScheme 一键换主题色
+//    · useToast        轻量全局提示
+//    · 数据层 fetch('/api/todo') 走 basic 真接口（禁止直读 data/*.json、禁止自造 route.ts/store）
+//
+// 3) 适用场景（什么时候用 / 替代什么）
+//    · 想要开箱即用 + 自带设计系统 + props 控样式的 React 项目
+//    · 与已学 antd / MUI / shadcn / Mantine 同属组件库流派；你已熟前三者，
+//      本支作「另一流派」认领即可（难度：了解即可·进阶，不必深练）
 // ───────────────────────────────────────────────────────────
 'use client'
 
-// 【Chakra UI 分支 · learn/chakra-ui】
-// 演示：Chakra UI v2 组件库（国际主流 UI 之一，基于 emotion）。ChakraProvider 包住业务。
-// 业务：复用 /api/todo 做增删改查。
+// 【Chakra UI 分支 · learn/chakra-ui】业务：复用 /api/todo 做增删改查（照 basic 范本，不直读 data/*.json）
 import { useEffect, useState } from 'react'
 import {
   ChakraProvider,
@@ -38,6 +48,7 @@ function TodoApp() {
   const [editing, setEditing] = useState<{ id: number; title: string } | null>(null)
   const toast = useToast()
 
+  // 取数：分页拉 /api/todo（sort=-id 最新在前），复用 basic 真接口，绝不直读 data/*.json
   const load = async (p: number) => {
     const r = await fetch(`/api/todo?page=${p}&pageSize=${PAGE_SIZE}&sort=-id`)
     const j = await r.json()
@@ -50,6 +61,7 @@ function TodoApp() {
     load(1)
   }, [])
 
+  // 新增：POST /api/todo 后刷新当前页，useToast 给轻量反馈
   const add = async () => {
     if (!title.trim()) return
     await fetch('/api/todo', {
@@ -62,6 +74,7 @@ function TodoApp() {
     toast({ title: '已新增', status: 'success', duration: 1500 })
   }
 
+  // 改：PATCH /api/todo/:id（done 切换 / 标题编辑都走这里）
   const patch = async (id: number, p: Partial<Todo>) => {
     await fetch(`/api/todo/${id}`, {
       method: 'PATCH',
@@ -71,6 +84,7 @@ function TodoApp() {
     load(page)
   }
 
+  // 删：DELETE /api/todo/:id
   const remove = async (id: number) => {
     await fetch(`/api/todo/${id}`, { method: 'DELETE' })
     load(page)
@@ -89,6 +103,7 @@ function TodoApp() {
         <Button variant="outline" onClick={() => load(page)}>刷新</Button>
       </HStack>
 
+      {/* 列表渲染：每条 done 用 Checkbox 切换，标题双击进入编辑态 */}
       <List spacing={2}>
         {todos.map((t) => (
           <ListItem key={t.id} borderBottomWidth="1px" py={1}>
@@ -116,12 +131,37 @@ function TodoApp() {
         ))}
       </List>
 
+      {/* 分页：上一页 / 下一页 + 总数，边界禁用 */}
       <HStack justify="space-between" mt={4}>
         <Button size="sm" disabled={page <= 1} onClick={() => load(page - 1)}>上一页</Button>
         <Text fontSize="sm">{page} / {totalPages}（共 {total}）</Text>
         <Button size="sm" disabled={page >= totalPages} onClick={() => load(page + 1)}>下一页</Button>
       </HStack>
 
+      {/* ── 文末三对比（§16 强制）：Chakra UI vs 替代方案 antd vs shadcn ── */}
+      <Box mt={8} p={4} borderWidth="1px" borderRadius="md">
+        <Heading size="sm" mb={3}>📊 技术选型：React 组件库三向对比</Heading>
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b">
+              <th className="px-2 py-1 text-left">维度</th>
+              <th className="px-2 py-1 text-left">Chakra UI（本例）</th>
+              <th className="px-2 py-1 text-left">antd</th>
+              <th className="px-2 py-1 text-left">shadcn/ui</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b"><td className="px-2 py-1">样式驱动</td><td className="px-2 py-1">props（colorScheme / as）</td><td className="px-2 py-1">className + 主题 token</td><td className="px-2 py-1">Tailwind 原子类 + 复制源码</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">底层</td><td className="px-2 py-1">emotion（CSS-in-JS）</td><td className="px-2 py-1">CSS-in-JS（内部）</td><td className="px-2 py-1">无运行时，纯 Tailwind</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">定制方式</td><td className="px-2 py-1">theme.extend 全局主题</td><td className="px-2 py-1">ConfigProvider 换主题</td><td className="px-2 py-1">直接改 components 源码</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">后台模板</td><td className="px-2 py-1">需自己拼（无官方 admin）</td><td className="px-2 py-1">ProComponents 齐活</td><td className="px-2 py-1">需自行搭（常配 Next/Admin）</td></tr>
+            <tr className="border-b"><td className="px-2 py-1">适合</td><td className="px-2 py-1">props 控样式、快出活</td><td className="px-2 py-1">中后台全家桶</td><td className="px-2 py-1">要完全掌控样式/轻量</td></tr>
+          </tbody>
+        </table>
+        <Text fontSize="xs" color="gray.500" mt={2}>同流派还有 MUI / Mantine（本仓库 admin-mui、admin-mantine 已演示）。组件库挑一支深用即可，不必全学。</Text>
+      </Box>
+
+      {/* 补充：跨框架对照（Vue 用户友好版） */}
       <details className="mt-6 rounded border p-3 text-sm">
         <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
         <table className="mt-2 w-full border-collapse text-left">
