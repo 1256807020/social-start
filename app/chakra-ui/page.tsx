@@ -37,6 +37,7 @@ import {
   useToast,
 } from '@chakra-ui/react'
 
+// 数据形状与 basic 的 /api/todo 契约一致（id/title/done）；PAGE_SIZE 控制每页条数
 type Todo = { id: number; title: string; done: boolean }
 const PAGE_SIZE = 8
 
@@ -91,8 +92,9 @@ function TodoApp() {
     load(page)
   }
 
-  const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1)
+  const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1) // 至少 1 页，避免 0 页/负数
 
+  // 页面骨架：Container 居中定宽容器；Heading 标题；Text 一句说明
   return (
     <Container maxW="3xl" py={8}>
       <Heading size="lg" mb={4}>Chakra UI · todo CRUD · app/chakra-ui</Heading>
@@ -122,7 +124,6 @@ function TodoApp() {
                   }}
                 />
               ) : (
-                {/* as 是 Chakra 多态固定写法：按条件把 <Text> 渲染成 <del>（完成划线）或 <span> */}
                 <Text flex="1" as={t.done ? 'del' : 'span'} onDoubleClick={() => setEditing({ id: t.id, title: t.title })}>
                   #{t.id} {t.title}
                 </Text>
@@ -184,11 +185,9 @@ function TodoApp() {
   )
 }
 
-// 【固定写法】Chakra UI 整页根必须包一层 <ChakraProvider>（注入主题与样式上下文），只包这一次
 export default function ChakraUiPage() {
   return (
     <ChakraProvider>
-      {/* 外层 Box 用 bg/minH 等 props 控制布局样式（替代手写 CSS，固定写法） */}
       <Box bg="gray.50" minH="100vh">
         <TodoApp />
       </Box>
