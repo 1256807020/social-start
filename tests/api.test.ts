@@ -316,7 +316,7 @@ describe('验证码 /captcha', () => {
 describe('文件接口 /file', () => {
   it('POST /api/file/upload 任意文件', async () => {
     const fd = new FormData()
-    fd.append('file', new File([Buffer.from('hello agent-browser')], 'note.txt', { type: 'text/plain' }))
+    fd.append('file', new File([Buffer.from('hello agent-browser') as unknown as BlobPart], 'note.txt', { type: 'text/plain' }))
     const r = await api('/api/file/upload', { method: 'POST', body: fd })
     expect(r.status).toBe(201)
     expect(r.json.data.url).toContain('/uploads/')
@@ -333,7 +333,7 @@ describe('文件接口 /file', () => {
       method: 'POST',
       body: (() => {
         const fd = new FormData()
-        fd.append('file', new File([Buffer.from('public file')], 'pub.txt', { type: 'text/plain' }))
+        fd.append('file', new File([Buffer.from('public file') as unknown as BlobPart], 'pub.txt', { type: 'text/plain' }))
         return fd
       })(),
     })
@@ -348,7 +348,7 @@ describe('文件接口 /file', () => {
       method: 'POST',
       body: (() => {
         const fd = new FormData()
-        fd.append('file', new File([Buffer.from('x')], 'inf.txt', { type: 'text/plain' }))
+        fd.append('file', new File([Buffer.from('x') as unknown as BlobPart], 'inf.txt', { type: 'text/plain' }))
         return fd
       })(),
     })
@@ -363,7 +363,7 @@ describe('文件接口 /file', () => {
       method: 'POST',
       body: (() => {
         const fd = new FormData()
-        fd.append('file', new File([Buffer.from('d')], 'del.txt', { type: 'text/plain' }))
+        fd.append('file', new File([Buffer.from('d') as unknown as BlobPart], 'del.txt', { type: 'text/plain' }))
         return fd
       })(),
     })
