@@ -18,7 +18,8 @@ export async function GET(
     await withApi(async () => {
       assertName(resource)
       const res = await handlers.list(resource, q)
-      if (q.populate) await populateRecords(res.body.data as any[], q.populate)
+      // populateRecords 返回「复制后的新数组」（不原地改，避免污染 db 缓存），必须接住返回值
+      if (q.populate) res.body.data = await populateRecords(res.body.data as any[], q.populate)
       return res
     }),
   )
