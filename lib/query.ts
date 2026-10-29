@@ -160,13 +160,22 @@ export interface QueryResult {
   totalPages: number
 }
 
-/** 列表查询：过滤 / 关键字 / 排序 / 分页 / 投影 / 树形 */
-export function applyQuery(list: any[], q: Record<string, any> = {}): QueryResult {
+/**
+ * 仅按字段操作符过滤（不含关键字 / 排序 / 分页 / 投影 / 树形）。
+ * 供聚合（aggregate）等「需要全量过滤结果、但不能被默认分页截断」的场景复用。
+ */
+export function applyFilter(list: any[], q: Record<string, any> = {}): any[] {
   let rows = Array.isArray(list) ? list.slice() : []
   const filters = parseFilters(q)
-
   if (filters.length)
     rows = rows.filter((item) => filters.every((f) => test(item?.[f.field], f.op, f.raw)))
+  return rows
+}
+
+/** 列表查询：过滤 / 关键字 / 排序 / 分页 / 投影 / 树形 */
+export function applyQuery(list: any[], q: Record<string, any> = {}): QueryResult {
+  // 过滤复用 applyFilter，避免与聚合场景两处逻辑漂移
+  let rows = applyFilter(list, q)
 
   const keyword = q.keyword === undefined || q.keyword === null ? '' : String(q.keyword).trim()
   if (keyword) {
