@@ -9,7 +9,9 @@
 
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
-// 练习前在本分支运行：pnpm add gsap lenis
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+gsap.registerPlugin(ScrollTrigger)
+// 练习前在本分支运行：pnpm add gsap
 
 /**
  * 核心组合：LineReveal / 文字逐行揭示 + 图片揭示
