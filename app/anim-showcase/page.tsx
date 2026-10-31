@@ -56,8 +56,10 @@ export default function ShowcasePage() {
         },
       })
 
-      // 尾屏视差
-      gsap.to('.footer-bg', { yPercent: -30, scrollTrigger: { scrub: true } })
+      // 尾屏视差：背景点阵慢移、前景圆快移，形成可感知纵深
+      const foot = { trigger: '.footer', start: 'top bottom', end: 'bottom top', scrub: true }
+      gsap.to('.footer-bg', { yPercent: -12, ease: 'none', scrollTrigger: foot })
+      gsap.to('.footer-fg', { yPercent: 18, ease: 'none', scrollTrigger: foot })
 
       // 👉 进阶：加进度指示器、加每个作品卡的 hover 放大、加 clip-path 揭示封面
     }, root)
@@ -92,9 +94,16 @@ export default function ShowcasePage() {
         </div>
       </section>
 
-      <section style={{ height: '100vh', position: 'relative', overflow: 'hidden', display: 'grid', placeItems: 'center', color: '#fff' }}>
-        <div className="footer-bg" style={{ position: 'absolute', inset: '-20% 0', background: 'linear-gradient(135deg,#f60,#60f)' }} />
-        <h2 style={{ position: 'relative' }}>Let’s talk →</h2>
+      <section className="footer" style={{ height: '100vh', position: 'relative', overflow: 'hidden', display: 'grid', placeItems: 'center', color: '#fff' }}>
+        <div className="footer-bg" style={{ position: 'absolute', inset: '-30% 0', background: 'linear-gradient(135deg,#f60,#60f)' }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,.25) 2px, transparent 2px)', backgroundSize: '44px 44px' }} />
+        </div>
+        <div className="footer-fg" style={{ position: 'absolute', inset: '20% 0', display: 'flex', justifyContent: 'center', gap: 40 }}>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} style={{ width: 70, height: 70, borderRadius: '50%', background: `hsla(${i * 90} 90% 70% / .9)` }} />
+          ))}
+        </div>
+        <h2 style={{ position: 'relative', zIndex: 2, fontSize: 64, fontWeight: 800, textShadow: '0 8px 30px rgba(0,0,0,.4)' }}>Let’s talk →</h2>
       </section>
       <details className="mt-6 rounded border p-3 text-sm">
         <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
