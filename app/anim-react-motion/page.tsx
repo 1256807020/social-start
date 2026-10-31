@@ -21,8 +21,11 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
  */
 export default function ReactMotionPage() {
   const [open, setOpen] = useState(false)
+  const [show2, setShow2] = useState(true)
+  const [big, setBig] = useState(false)
   const { scrollY } = useScroll()
-  const y = useTransform(scrollY, [0, 300], [0, -100]) // 👉 滚动驱动位移
+  const y = useTransform(scrollY, [0, 600], [0, -260]) // 👉 滚动驱动位移（幅度加大更易见）
+  const op = useTransform(scrollY, [0, 600], [1, 0.3]) // 👉 滚动同时淡出
 
   return (
     <main style={{ padding: 40, fontFamily: 'system-ui', minHeight: '200vh' }}>
@@ -43,30 +46,33 @@ export default function ReactMotionPage() {
         )}
       </AnimatePresence>
 
-      {/* 2. 变体（variants）批量编排子元素 */}
+      {/* 2. 变体（variants）批量编排子元素 —— 点按钮重播交错进场 */}
+      <button onClick={() => setShow2((v) => !v)}>重播交错</button>
       <motion.ul
-        variants={{ show: { transition: { staggerChildren: 0.1 } } }}
+        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.15, delayChildren: 0.05 } } }}
         initial="hidden"
-        animate="show"
+        animate={show2 ? 'show' : 'hidden'}
         style={{ display: 'flex', gap: 8, padding: 0 }}
       >
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3, 4].map((i) => (
           <motion.li
             key={i}
-            variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-            style={{ listStyle: 'none', width: 40, height: 40, background: '#48f' }}
+            variants={{ hidden: { opacity: 0, y: 30, scale: 0.6 }, show: { opacity: 1, y: 0, scale: 1 } }}
+            style={{ listStyle: 'none', width: 40, height: 40, background: '#48f', borderRadius: 8 }}
           />
         ))}
       </motion.ul>
 
-      {/* 3. 布局动画：layout 属性自动补间位置变化 */}
-      <motion.div layout style={{ marginTop: 20, padding: 20, background: '#fec' }}>
-        <motion.div layout style={{ width: 80, height: 80, background: '#f88' }} />
+      {/* 3. 布局动画：layout 属性自动补间尺寸变化 —— 点按钮看补间 */}
+      <button onClick={() => setBig((v) => !v)}>切换尺寸</button>
+      <motion.div layout style={{ marginTop: 20, padding: 20, background: '#fec', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <motion.div layout style={{ width: big ? 200 : 80, height: big ? 200 : 80, background: '#f88', borderRadius: 12 }} />
+        <motion.div layout style={{ width: big ? 60 : 120, height: big ? 120 : 60, background: '#8f8', borderRadius: 12 }} />
       </motion.div>
 
-      {/* 4. 滚动驱动（useScroll + useTransform） */}
-      <motion.div style={{ y, marginTop: 40, padding: 20, background: '#efe' }}>
-        我随滚动上移
+      {/* 4. 滚动驱动（useScroll + useTransform） —— 向下滚动看上移+淡出 */}
+      <motion.div style={{ y, opacity: op, marginTop: 40, padding: 20, background: '#efe' }}>
+        我随滚动上移并淡出
       </motion.div>
 
       {/* 👉 5. Next 路由过渡：用 View Transitions API 或 template.tsx 做页面切换动画
