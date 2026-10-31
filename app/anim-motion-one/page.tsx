@@ -7,6 +7,7 @@
 // ───────────────────────────────────────────────────────────
 'use client'
 
+import { useEffect } from 'react'
 import { animate, stagger } from 'motion'
 // 练习前在本分支运行：pnpm add motion
 
@@ -24,6 +25,12 @@ export default function MotionOnePage() {
   // 👉 3. 复位
   const reset = () =>
     animate(['.mo-box', '.mo-item'], { opacity: 1, transform: 'translateX(0) translateY(0) rotate(0deg)' }, { duration: 0.4 })
+
+  // 👉 挂载即自动演示交错进场，确保一进页面就能看到效果（按钮仍可手动重播）
+  useEffect(() => {
+    playStagger()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <main style={{ padding: 40, fontFamily: 'system-ui' }}>
