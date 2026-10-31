@@ -59,9 +59,11 @@ export default function ScrollScalePage() {
         },
       })
 
-      // 3. 多层视差：不同层不同速度
-      gsap.to('.layer-back', { yPercent: -20, scrollTrigger: { scrub: true } })
-      gsap.to('.layer-front', { yPercent: 20, scrollTrigger: { scrub: true } })
+      // 3. 多层视差：不同层不同速度（背景慢、前景快 → 形成纵深）
+      const para = { trigger: '.parallax', start: 'top bottom', end: 'bottom top', scrub: true }
+      gsap.to('.layer-sky', { yPercent: -12, ease: 'none', scrollTrigger: para })
+      gsap.to('.layer-mid', { yPercent: 8, ease: 'none', scrollTrigger: para })
+      gsap.to('.layer-text', { yPercent: -16, ease: 'none', scrollTrigger: para })
 
       // 👉 4. ScrollSmoother 思路：用 Lenis + 一个“内容包裹层”做整体缓冲
     }, root)
@@ -85,9 +87,18 @@ export default function ScrollScalePage() {
         </div>
       </section>
 
-      <section style={{ height: '100vh', position: 'relative', overflow: 'hidden' }}>
-        <div className="layer-back" style={{ position: 'absolute', inset: 0, background: '#fc6', opacity: 0.5 }} />
-        <div className="layer-front" style={{ position: 'absolute', inset: '30%', background: '#f6c', opacity: 0.7 }} />
+      <section className="parallax" style={{ height: '100vh', position: 'relative', overflow: 'hidden' }}>
+        <div className="layer-sky" style={{ position: 'absolute', top: '-30%', left: 0, right: 0, height: '160%', background: 'linear-gradient(180deg,#0b1e3a 0%,#1b3a6b 60%,#2a5da8 100%)' }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,.25) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        </div>
+        <div className="layer-mid" style={{ position: 'absolute', top: '-30%', left: 0, right: 0, height: '160%', display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center' }}>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} style={{ width: 90, height: 90, borderRadius: '50%', background: `hsla(${i * 90} 80% 65% / .85)` }} />
+          ))}
+        </div>
+        <div className="layer-text" style={{ position: 'absolute', top: '-30%', left: 0, right: 0, height: '160%', display: 'grid', placeItems: 'center' }}>
+          <h2 style={{ color: '#fff', fontSize: 'clamp(40px,8vw,96px)', fontWeight: 800, letterSpacing: 4, textShadow: '0 8px 30px rgba(0,0,0,.4)' }}>视差 PARALLAX</h2>
+        </div>
       </section>
       <details className="mt-6 rounded border p-3 text-sm">
         <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 本项目小结</summary>
