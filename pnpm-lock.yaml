@@ -11,6 +11,9 @@ importers:
       '@base-ui/react':
         specifier: ^1.5.0
         version: 1.5.0(@date-fns/tz@1.4.1)(@types/react@19.2.14)(date-fns@4.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      babylonjs:
+        specifier: ^9.33.1
+        version: 9.33.1
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -891,6 +894,9 @@ packages:
   ast-types@0.16.1:
     resolution: {integrity: sha512-6t10qk83GOG8p0vKmaCr8eiilZwO171AvbROMtvvNiwrTly62t+7XkA8RdIIVbpMhCASAsxgAzdRSwh6nw/5Dg==}
     engines: {node: '>=4'}
+
+  babylonjs@9.33.1:
+    resolution: {integrity: sha512-85k1jv3XmYD3N6YpoYFoPHMKuNzePAq6rdoiGIas/YSsOaP1l0vI2oEO9pjDo+THcV/4Vjvgq8jzGpjsv2cH+Q==}
 
   balanced-match@4.0.4:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
@@ -3120,6 +3126,8 @@ snapshots:
   ast-types@0.16.1:
     dependencies:
       tslib: 2.8.1
+
+  babylonjs@9.33.1: {}
 
   balanced-match@4.0.4: {}
 
