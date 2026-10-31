@@ -7,7 +7,7 @@
 // ───────────────────────────────────────────────────────────
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 // 练习前在本分支运行：pnpm add framer-motion
 
@@ -23,9 +23,13 @@ export default function ReactMotionPage() {
   const [open, setOpen] = useState(false)
   const [show2, setShow2] = useState(true)
   const [big, setBig] = useState(false)
-  const { scrollY } = useScroll()
-  const y = useTransform(scrollY, [0, 600], [0, -260]) // 👉 滚动驱动位移（幅度加大更易见）
-  const op = useTransform(scrollY, [0, 600], [1, 0.3]) // 👉 滚动同时淡出
+  // 4. 滚动驱动：把进度绑定到元素自身进入视口的过程（而非整页绝对滚动），效果才跟手可见
+  const targetRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: targetRef, offset: ['start end', 'end start'] })
+  const y = useTransform(scrollYProgress, [0, 1], [120, -120]) // 👉 随滚动上移
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.85, 1.1, 0.85]) // 👉 先放大后缩小
+  const rotate = useTransform(scrollYProgress, [0, 1], [-8, 8]) // 👉 轻微旋转
+  const op = useTransform(scrollYProgress, [0, 0.3, 1], [0, 1, 0.35]) // 👉 进入淡入、离开淡出
 
   return (
     <main style={{ padding: 40, fontFamily: 'system-ui', minHeight: '200vh' }}>
@@ -70,9 +74,9 @@ export default function ReactMotionPage() {
         <motion.div layout style={{ width: big ? 60 : 120, height: big ? 120 : 60, background: '#8f8', borderRadius: 12 }} />
       </motion.div>
 
-      {/* 4. 滚动驱动（useScroll + useTransform） —— 向下滚动看上移+淡出 */}
-      <motion.div style={{ y, opacity: op, marginTop: 40, padding: 20, background: '#efe' }}>
-        我随滚动上移并淡出
+      {/* 4. 滚动驱动（useScroll + useTransform） —— 向下滚动，看它进入时上移/缩放/旋转/淡入 */}
+      <motion.div ref={targetRef} style={{ y, scale, rotate, opacity: op, marginTop: 40, padding: 20, background: '#efe' }}>
+        我随滚动上移 · 缩放 · 旋转 · 淡入
       </motion.div>
 
       {/* 👉 5. Next 路由过渡：用 View Transitions API 或 template.tsx 做页面切换动画
