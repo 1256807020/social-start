@@ -9,7 +9,7 @@
 
 import { useRef } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from 'framer-motion'
 // 练习前在本分支运行：pnpm add framer-motion
 // React Bits 组件来自 https://reactbits.dev ，这里用 Motion 手写等价实现，便于理解原理。
 
@@ -89,13 +89,70 @@ function Magnet({ children }: { children: ReactNode }) {
   )
 }
 
+function TypeReveal() {
+  const TEXT = 'Motion 让文字逐字浮现 ✦'
+  return (
+    <motion.h2
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.06, delayChildren: 0.2 } } }}
+      style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.4, minHeight: 40 }}
+    >
+      {TEXT.split('').map((ch, i) => (
+        <motion.span
+          key={i}
+          variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+          style={{ display: 'inline-block', whiteSpace: 'pre' }}
+        >
+          {ch}
+        </motion.span>
+      ))}
+    </motion.h2>
+  )
+}
+
+function CursorGlow() {
+  const ref = useRef<HTMLDivElement>(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  const glow = useMotionTemplate`radial-gradient(220px circle at ${x}px ${y}px, rgba(99,102,241,0.35), rgba(99,102,241,0) 70%), #0b1020`
+  const onMove = (e: MouseEvent) => {
+    const r = ref.current?.getBoundingClientRect()
+    if (!r) return
+    x.set(e.clientX - r.left)
+    y.set(e.clientY - r.top)
+  }
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={onMove}
+      style={{
+        background: glow,
+        position: 'relative',
+        height: 160,
+        borderRadius: 12,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#cbd5e1',
+        border: '1px solid #1e293b',
+        overflow: 'hidden',
+      }}
+    >
+      悬浮我 → 光标光晕跟随
+    </motion.div>
+  )
+}
+
 export default function ReactBitsPage() {
   return (
     <main style={{ padding: 40, fontFamily: 'system-ui', display: 'grid', gap: 24, maxWidth: 520 }}>
-      <h1>Motion + React Bits（复刻 3 个经典 Bit）</h1>
+      <h1>Motion + React Bits（复刻 5 个经典 Bit）</h1>
       <TiltCard />
       <GradientText />
       <Magnet>磁吸按钮</Magnet>
+      <TypeReveal />
+      <CursorGlow />
       <details className="mt-6 rounded border p-3 text-sm">
         <summary className="cursor-pointer font-semibold">📚 Vue2 / Vue3 / React 三向对照 & 小结</summary>
         <table className="mt-2 w-full border-collapse text-left">
