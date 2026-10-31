@@ -32,7 +32,7 @@ export default function ScrollScalePage() {
     requestAnimationFrame(raf)
 
     const ctx = gsap.context(() => {
-      // 1. 滚动缩放：卡片随滚动从 0.6 放大到 1
+      // 1. 滚动缩放：钉住首屏，卡片随滚动从 0.6 放大到 1（pin 让缩放居中可见）
       gsap.fromTo(
         '.scale-card',
         { scale: 0.6, opacity: 0.4 },
@@ -40,7 +40,7 @@ export default function ScrollScalePage() {
           scale: 1,
           opacity: 1,
           ease: 'none',
-          scrollTrigger: { trigger: '.scale-wrap', start: 'top 80%', end: 'top 30%', scrub: true },
+          scrollTrigger: { trigger: '.scale-wrap', start: 'top top', end: '+=80%', pin: true, scrub: true, invalidateOnRefresh: true },
         },
       )
 
@@ -75,8 +75,9 @@ export default function ScrollScalePage() {
 
   return (
     <main ref={root} style={{ fontFamily: 'system-ui' }}>
-      <section className="scale-wrap" style={{ height: '100vh', display: 'grid', placeItems: 'center' }}>
-        <div className="scale-card" style={{ width: 280, height: 200, background: '#48f', borderRadius: 16 }} />
+      <section className="scale-wrap" style={{ height: '100vh', display: 'grid', placeItems: 'center', gap: 24 }}>
+        <div className="scale-card" style={{ width: 280, height: 200, background: 'linear-gradient(135deg,#48f,#7af)', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,.25)' }} />
+        <p style={{ color: '#666', fontSize: 14 }}>↓ 向下滚动，卡片随滚动放大</p>
       </section>
 
       <section className="h-scroll" style={{ height: '100vh', overflow: 'hidden' }}>
