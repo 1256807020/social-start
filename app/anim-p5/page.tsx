@@ -8,30 +8,40 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import p5 from 'p5'
 import type { p5 as P5Type } from 'p5'
 // 练习前在本分支运行：pnpm add p5 @types/p5
+// p5 是纯浏览器库，顶层 import 会在 SSR 阶段访问 window 直接 500，故在 useEffect 内动态 import。
 
 export default function P5Page() {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const sketch = (p: P5Type) => {
-      p.setup = () => {
-        p.createCanvas(420, 300) // 👉 画布尺寸
-        p.noStroke()
+    let inst: P5Type | null = null
+    let cancelled = false
+    // 动态 import：避免 SSR 阶段访问 window/document 导致整页 500
+    import('p5').then((mod) => {
+      if (cancelled || !ref.current) return
+      const P5Ctor = mod.default
+      const sketch = (p: P5Type) => {
+        p.setup = () => {
+          p.createCanvas(420, 300) // 👉 画布尺寸
+          p.noStroke()
+        }
+        p.draw = () => {
+          p.background(11, 16, 32)
+          p.fill(72, 143, 255)
+          p.ellipse(p.mouseX, p.mouseY, 60, 60) // 👉 跟随鼠标的圆
+          p.fill(244, 77, 103)
+          const s = 40 + 20 * Math.sin(p.frameCount * 0.05) // 👉 呼吸方块
+          p.rect(p.width / 2 - s / 2, p.height / 2 - s / 2, s, s)
+        }
       }
-      p.draw = () => {
-        p.background(11, 16, 32)
-        p.fill(72, 143, 255)
-        p.ellipse(p.mouseX, p.mouseY, 60, 60) // 👉 跟随鼠标的圆
-        p.fill(244, 77, 103)
-        const s = 40 + 20 * Math.sin(p.frameCount * 0.05) // 👉 呼吸方块
-        p.rect(p.width / 2 - s / 2, p.height / 2 - s / 2, s, s)
-      }
+      inst = new P5Ctor(sketch, ref.current)
+    })
+    return () => {
+      cancelled = true
+      inst?.remove() // 👉 务必清理，否则切分支会残留实例
     }
-    const inst = new p5(sketch, ref.current!)
-    return () => inst.remove() // 👉 务必清理，否则切分支会残留实例
   }, [])
 
   return (
