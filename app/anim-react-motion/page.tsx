@@ -26,9 +26,9 @@ export default function ReactMotionPage() {
   // 4. 滚动驱动：把进度绑定到元素自身进入视口的过程（而非整页绝对滚动），效果才跟手可见
   const targetRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: targetRef, offset: ['start end', 'end start'] })
-  const y = useTransform(scrollYProgress, [0, 1], [120, -120]) // 👉 随滚动上移
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.85, 1.1, 0.85]) // 👉 先放大后缩小
-  const rotate = useTransform(scrollYProgress, [0, 1], [-8, 8]) // 👉 轻微旋转
+  const y = useTransform(scrollYProgress, [0, 1], [160, -160]) // 👉 随滚动上移
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1.15, 0.8]) // 👉 先放大后缩小
+  const rotate = useTransform(scrollYProgress, [0, 1], [-10, 10]) // 👉 轻微旋转
   const op = useTransform(scrollYProgress, [0, 0.3, 1], [0, 1, 0.35]) // 👉 进入淡入、离开淡出
 
   return (
@@ -74,8 +74,11 @@ export default function ReactMotionPage() {
         <motion.div layout style={{ width: big ? 60 : 120, height: big ? 120 : 60, background: '#8f8', borderRadius: 12 }} />
       </motion.div>
 
-      {/* 4. 滚动驱动（useScroll + useTransform） —— 向下滚动，看它进入时上移/缩放/旋转/淡入 */}
-      <motion.div ref={targetRef} style={{ y, scale, rotate, opacity: op, marginTop: 40, padding: 20, background: '#efe' }}>
+      {/* 4. 滚动驱动（useScroll + useTransform） —— 向下滚动，看它进入时上移/缩放/旋转/淡入（区块加高，穿越视口滚动更长→效果更跟手） */}
+      <motion.div
+        ref={targetRef}
+        style={{ y, scale, rotate, opacity: op, marginTop: 40, minHeight: '60vh', display: 'grid', placeItems: 'center', padding: 20, background: '#efe', fontSize: 20, fontWeight: 600 }}
+      >
         我随滚动上移 · 缩放 · 旋转 · 淡入
       </motion.div>
 
